@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#FFF9F5">
+<link rel="manifest" href="manifest.json">
+<title>Charlie</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #FFF9F5; min-height: 100vh; }
+
+/* ── SYNC BANNER ── */
+.sync-banner {
+  display: none; align-items: center; justify-content: center; gap: 8px;
+  padding: 8px 16px; font-size: 12px; font-weight: 500;
+  background: #EBF5E6; color: #2D5E1E; border-bottom: 1px solid #C5E0BC;
+}
+.sync-banner.show { display: flex; }
+.sync-banner.error { background: #FEF0E6; color: #7D3A08; border-color: #F4A261; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #5DCAA5; }
+.sync-dot.error { background: #F4A261; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.sync-dot.syncing { animation: pulse 1s infinite; }
+
+/* ── LAYOUT ── */
+.app-shell { display: flex; min-height: 100vh; position: relative; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.22); z-index: 40; }
+.overlay.open { display: block; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 220px;
+  background: #fff; border-right: 1px solid #EDE9E3;
+  z-index: 50; transform: translateX(-100%);
+  transition: transform 0.26s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+}
+.sidebar.open { transform: translateX(0); }
+.sidebar-header { padding: 28px 18px 18px; border-bottom: 1px solid #EDE9E3; }
+.baby-row { display: flex; align-items: center; gap: 12px; }
+.baby-avatar { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #FAEEDA; flex-shrink: 0; }
+.baby-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.baby-name { font-size: 17px; font-weight: 700; color: #2C2C2A; }
+.baby-age  { font-size: 12px; color: #888780; margin-top: 2px; }
+.nav-list { list-style: none; padding: 12px 8px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; cursor: pointer;
+  font-size: 14px; color: #888780; transition: background 0.15s; user-select: none;
+}
+.nav-item:hover { background: #FFF4EE; }
+.nav-item.active { background: #FAEEDA; color: #633806; font-weight: 600; }
+.sidebar-footer { padding: 12px 8px; border-top: 1px solid #EDE9E3; }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar {
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+  background: #FFF9F5; border-bottom: 1px solid #EDE9E3;
+  position: sticky; top: 0; z-index: 10;
+}
+.menu-btn {
+  width: 38px; height: 38px; border-radius: 10px; border: 1px solid #EDE9E3;
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px; color: #888780; flex-shrink: 0;
+}
+.topbar-title { font-size: 15px; font-weight: 600; color: #2C2C2A; }
+.topbar-right { margin-left: auto; font-size: 12px; color: #888780; }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.active { display: block; }
+.module-content { padding: 16px; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── ACCUEIL ── */
+.home-hero {
+  background: #fff; border: 1px solid #EDE9E3; border-radius: 20px;
+  overflow: hidden; height: 180px; position: relative;
+}
+.home-hero img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(255,249,245,0.85) 0%, transparent 60%);
+  display: flex; align-items: flex-end; padding: 16px;
+}
+.hero-text h2 { font-size: 18px; font-weight: 700; color: #2C2C2A; }
+.hero-text p  { font-size: 12px; color: #888780; margin-top: 2px; }
+.section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #B4B2A9; margin-bottom: 10px; }
+.quick-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+.quick-card {
+  background: #fff; border: 1px solid #EDE9E3; border-radius: 14px;
+  padding: 14px 12px; cursor: pointer; transition: background 0.15s;
+  display: flex; align-items: center; gap: 10px;
+}
+.quick-card:hover { background: #FFF4EE; }
+.qc-icon { font-size: 28px; flex-shrink: 0; }
+.qc-label { font-size: 11px; color: #888780; }
+.qc-value { font-size: 14px; font-weight: 600; color: #2C2C2A; margin-top: 2px; }
+.action-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+.action-btn {
+  background: #fff; border: 1px solid #EDE9E3; border-radius: 14px;
+  padding: 16px 12px; display: flex; flex-direction: column; align-items: center;
+  gap: 8px; cursor: pointer; transition: background 0.15s; font-size: 28px;
+}
+.action-btn:hover { background: #FFF4EE; }
+.action-btn span { font-size: 13px; font-weight: 600; color: #2C2C2A; }
+
+/* ── ACCUEIL / HOME HERO V2 ── */
+.home-hero-v2 {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 16px;
+  align-items: center;
+  background: linear-gradient(135deg, #FFF9F5 0%, #FAEEDA 100%);
+  border: 1px solid #EDE9E3;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.hero-illustration {
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.home-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.hero-content-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hero-greeting-v2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2C2C2A;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.hero-info {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.info-emoji {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.info-label {
+  font-size: 10px;
+  color: #888780;
+  font-weight: 500;
+}
+.info-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2C2C2A;
+}
+
+.dev-phrase {
+  background: #fff;
+  border: 1px solid #EDE9E3;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 10px;
+}
+.dev-emoji {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.dev-text {
+  font-size: 12px;
+  color: #2C2C2A;
+  line-height: 1.4;
+}
+
+.last-events-section {
+  margin-bottom: 8px;
+}
+.last-events-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+.event-card {
+  background: #fff;
+  border: 1px solid #EDE9E3;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.event-card:hover {
+  background: #FFF4EE;
+  border-color: #EF9F27;
+  box-shadow: 0 2px 8px rgba(239, 159, 39, 0.15);
+}
+.event-card:active {
+  transform: scale(0.98);
+}
+.event-icon-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+.event-label {
+  font-size: 11px;
+  color: #888780;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.event-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2C2C2A;
+}
+
+/* ── ACCUEIL / ANCIENS STYLES ── */
+.breast-section {
+  background: #fff; border: 1px solid #EDE9E3; border-radius: 16px;
+  padding: 16px 10px; display: flex; align-items: center; gap: 4px;
+}
+.side-panel { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.side-label { font-size: 11px; color: #888780; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.chrono-display { font-size: 26px; font-weight: 600; color: #2C2C2A; font-variant-numeric: tabular-nums; }
+.chrono-display.running { color: #BA7517; }
+.chrono-stats {
+  font-size: 10px; color: #888780; text-align: center; margin-top: 4px; line-height: 1.4;
+  min-height: 28px; display: flex; flex-direction: column; justify-content: center;
+}
+.stat-active { font-weight: 600; color: #2C2C2A; }
+.stat-pauses { font-size: 9px; margin-top: 1px; }
+.chrono-btn {
+  width: 50px; height: 50px; border-radius: 50%; border: 1px solid #EDE9E3;
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; font-size: 20px;
+}
+.chrono-btn:hover { background: #FFF4EE; }
+.chrono-btn:active { transform: scale(0.93); }
+.chrono-btn.running { background: #FAEEDA; border-color: #EF9F27; }
+.chrono-btn.paused { background: #F5F4F2; border-color: #888780; }
+.pause-btn {
+  width: 38px; height: 38px; border-radius: 50%; border: 1px solid #EDE9E3;
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; font-size: 16px; flex-shrink: 0;
+}
+.pause-btn:hover { background: #FFF4EE; }
+.pause-btn:active { transform: scale(0.93); }
+.pause-btn.paused { background: #F5F4F2; border-color: #888780; color: #888780; }
+.last-feed { font-size: 11px; color: #888780; text-align: center; min-height: 15px; }
+.breast-svg-wrap { flex-shrink: 0; width: 120px; height: 120px; }
+.breast-svg-wrap svg { width: 120px; height: 120px; }
+
+/* ── COUCHES ── */
+.diaper-section {
+  background: #fff; border: 1px solid #EDE9E3; border-radius: 16px;
+  padding: 24px 16px; display: flex; align-items: center; justify-content: center;
+  min-height: 180px; margin-bottom: 18px;
+}
+.diaper-img { 
+  width: 140px; 
+  height: 140px; 
+  object-fit: contain; 
+  transition: opacity 0.3s ease;
+}
+.diaper-img.changing { opacity: 0.6; }
+.diaper-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.diaper-btn {
+  background: #fff; border: 1px solid #EDE9E3; border-radius: 14px;
+  padding: 16px 12px; display: flex; flex-direction: column; align-items: center;
+  gap: 8px; cursor: pointer; transition: all 0.2s; font-size: 28px; font-weight: 600;
+}
+.diaper-btn:hover { background: #FFF4EE; }
+.diaper-btn:active { transform: scale(0.94); }
+.diaper-btn span { font-size: 12px; font-weight: 500; color: #888780; display: block; }
+.diaper-btn.active { background: #FAEEDA; border-color: #EF9F27; box-shadow: 0 2px 8px rgba(239, 159, 39, 0.2); }
+
+.counters { 
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;
+}
+.counter-card { 
+  background: linear-gradient(135deg, #fff 0%, #FFF9F5 100%);
+  border: 2px solid #EDE9E3; border-radius: 16px; 
+  padding: 16px 10px; text-align: center; 
+  transition: all 0.2s;
+}
+.counter-card:hover { border-color: #EF9F27; box-shadow: 0 4px 12px rgba(239, 159, 39, 0.1); }
+.counter-icon-lg { font-size: 32px; margin-bottom: 8px; }
+.counter-value { font-size: 32px; font-weight: 800; color: #2C2C2A; line-height: 1; }
+.counter-label { font-size: 11px; color: #888780; margin-top: 6px; font-weight: 600; letter-spacing: 0.04em; }
+
+.action-buttons { 
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px;
+}
+.action-btn-couche {
+  background: #fff; border: 2px solid #EDE9E3; border-radius: 20px;
+  padding: 24px 12px; display: flex; flex-direction: column; align-items: center;
+  gap: 10px; cursor: pointer; transition: all 0.2s; user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.action-btn-couche:hover { 
+  border-color: #EF9F27; 
+  box-shadow: 0 8px 20px rgba(239, 159, 39, 0.15);
+  transform: translateY(-2px);
+}
+.action-btn-couche:active { transform: scale(0.96); }
+.couche-img { width: 56px; height: 56px; object-fit: contain; }
+.btn-label { font-size: 14px; font-weight: 700; color: #2C2C2A; }
+.btn-sub   { font-size: 10px; color: #888780; margin-top: 2px; }
+
+@keyframes tapFlash { 0%{transform:scale(0.94)} 50%{transform:scale(1.04)} 100%{transform:scale(1)} }
+.tapped { animation: tapFlash 0.25s ease; }
+
+/* ── SOINS ── */
+.shortcuts { display: flex; flex-direction: column; gap: 8px; }
+.shortcut-card {
+  background: #fff; border: 1px solid #EDE9E3; border-radius: 14px;
+  padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+  transition: all 0.15s;
+}
+.shortcut-card:hover { background: #FFF9F5; }
+.shortcut-card.vitd { border-left: 3px solid #F5CB5C; }
+.shortcut-card.doli { border-left: 3px solid #F4A261; }
+.shortcut-card.bain { border-left: 3px solid #74C2E1; }
+.sc-icon { font-size: 26px; flex-shrink: 0; width: 36px; text-align: center; }
+.sc-body { flex: 1; }
+.sc-name   { font-size: 14px; font-weight: 600; color: #2C2C2A; }
+.sc-detail { font-size: 12px; color: #888780; margin-top: 2px; }
+.sc-last   { font-size: 11px; color: #B4B2A9; margin-top: 3px; }
+.sc-action {
+  padding: 8px 14px; border-radius: 8px; border: 1px solid #EDE9E3;
+  font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.sc-action.vitd { background: #FEF9E7; border-color: #F5CB5C; color: #7D6008; }
+.sc-action.doli { background: #FEF0E6; border-color: #F4A261; color: #7D3A08; }
+.sc-action.bain { background: #E8F6FC; border-color: #74C2E1; color: #0A5873; }
+
+/* ── DIAGRAMMES ── */
+.period-selector { display: flex; gap: 6px; background: #F0EDE8; border-radius: 10px; padding: 4px; }
+.period-btn {
+  flex: 1; padding: 7px; border-radius: 7px; border: none;
+  background: transparent; font-size: 12px; font-weight: 500; color: #888780; cursor: pointer;
+}
+.period-btn.active { background: #fff; color: #2C2C2A; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.chart-card { background: #fff; border: 1px solid #EDE9E3; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.chart-header { display: flex; align-items: center; justify-content: space-between; }
+.chart-title  { font-size: 14px; font-weight: 600; color: #2C2C2A; }
+.chart-legend { display: flex; gap: 10px; }
+.legend-item  { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #888780; }
+.legend-dot   { width: 8px; height: 8px; border-radius: 50%; }
+.chart-stats  { display: flex; gap: 10px; flex-wrap: wrap; }
+.stat-pill { background: #F5F4F2; border-radius: 8px; padding: 6px 10px; font-size: 11px; color: #888780; display: flex; flex-direction: column; align-items: center; }
+.stat-pill strong { font-size: 16px; font-weight: 700; color: #2C2C2A; line-height: 1.2; }
+.chart-svg-wrap { width: 100%; overflow: hidden; border-radius: 8px; }
+.chart-svg-wrap svg { width: 100%; display: block; }
+.weight-form { display: flex; gap: 8px; align-items: flex-end; padding-top: 4px; border-top: 1px solid #EDE9E3; }
+.wf-group { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.wf-group label { font-size: 11px; color: #888780; font-weight: 500; }
+.empty-chart { text-align: center; padding: 30px 20px; color: #B4B2A9; font-size: 13px; }
+
+/* ── FORMULAIRES COMMUNS ── */
+.save-row { display: flex; gap: 8px; }
+.btn-save {
+  flex: 1; padding: 13px; border-radius: 10px; border: 1px solid #EF9F27;
+  background: #FAEEDA; color: #633806; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.btn-save:hover { background: #FAC775; }
+.btn-save:disabled { background: #F5F4F2; border-color: #EDE9E3; color: #B4B2A9; cursor: default; }
+.btn-secondary {
+  padding: 13px 15px; border-radius: 10px; border: 1px solid #EDE9E3;
+  background: #fff; color: #888780; font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+.btn-secondary:hover { background: #FFF4EE; }
+.btn-save {
+  padding: 13px 15px; border-radius: 10px; border: none;
+  background: #EF9F27; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.btn-save:hover { background: #BA7517; }
+.save-row { display: flex; gap: 10px; }
+.save-row .btn-save { flex: 1; }
+.manual-form { background: #fff; border: 1px solid #EDE9E3; border-radius: 14px; padding: 14px; display: none; flex-direction: column; gap: 12px; }
+.manual-form.open { display: flex; }
+.form-title { font-size: 13px; font-weight: 600; color: #444441; }
+.form-label { font-size: 11px; color: #888780; margin-bottom: 3px; font-weight: 500; }
+.form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.form-group { display: flex; flex-direction: column; }
+input[type="text"], input[type="time"], input[type="number"], input[type="date"], select {
+  padding: 9px 10px; border-radius: 8px; border: 1px solid #EDE9E3;
+  font-size: 14px; background: #fff; color: #2C2C2A; width: 100%;
+}
+.btn-add {
+  padding: 10px 14px; border-radius: 8px; border: 1px solid #EF9F27;
+  background: #FAEEDA; color: #633806; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.btn-add:hover { background: #FAC775; }
+.btn-add-green {
+  padding: 10px 14px; border-radius: 8px; border: 1px solid #7EB86A;
+  background: #EBF5E6; color: #2D5E1E; font-size: 13px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.btn-add-green:hover { background: #D4EDCC; }
+.btn-dashed {
+  padding: 13px; border-radius: 10px; border: 1px dashed #C8C5BC;
+  background: transparent; color: #888780; font-size: 13px; cursor: pointer;
+  text-align: center; width: 100%;
+}
+.btn-dashed:hover { background: #fff; }
+.type-toggle { display: flex; gap: 0; background: #F0EDE8; border-radius: 9px; padding: 3px; }
+.type-btn {
+  flex: 1; padding: 8px; border-radius: 7px; border: none;
+  background: transparent; font-size: 13px; font-weight: 500; color: #888780; cursor: pointer;
+}
+.type-btn.active { background: #fff; color: #2C2C2A; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.fields-tetee, .fields-biberon { display: flex; flex-direction: column; gap: 10px; }
+.fields-biberon { display: none; }
+.fields-biberon.open { display: flex; }
+.fields-tetee.open { display: flex; }
+.type-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { padding: 6px 12px; border-radius: 20px; border: 1px solid #EDE9E3; font-size: 12px; font-weight: 500; color: #888780; cursor: pointer; background: #fff; }
+.pill.selected { background: #FAEEDA; border-color: #EF9F27; color: #633806; }
+.history-list { display: flex; flex-direction: column; gap: 6px; }
+.history-item { background: #fff; border: 1px solid #EDE9E3; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.hi-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.hi-body { flex: 1; }
+.hi-times    { font-size: 13px; font-weight: 600; color: #2C2C2A; }
+.hi-meta     { font-size: 11px; color: #888780; margin-top: 2px; }
+.hi-duration { font-size: 13px; font-weight: 500; color: #888780; white-space: nowrap; }
+.hi-delete   { background: none; border: none; cursor: pointer; padding: 4px; color: #B4B2A9; font-size: 16px; }
+.hi-delete:hover { color: #E24B4A; }
+.hi-edit     { background: none; border: none; cursor: pointer; padding: 4px; color: #B4B2A9; font-size: 15px; }
+.hi-edit:hover { color: #EF9F27; }
+.badge { font-size: 10px; padding: 1px 5px; border-radius: 4px; margin-left: 4px; font-weight: 400; }
+.badge-manuel  { background: #F1EFE8; color: #888780; }
+.badge-biberon { background: #E8F0FC; color: #1A4E8A; }
+.empty-state { text-align: center; padding: 24px; color: #B4B2A9; font-size: 13px; }
+
+/* ── ROUTINE ── */
+.routine-header-img { display: flex; justify-content: center; margin-bottom: 2px; }
+.routine-header-img img { width: 100px; height: 100px; object-fit: contain; }
+.routine-status-text { font-size: 14px; font-weight: 600; color: #2C2C2A; }
+.routine-yesterday-line { font-size: 13px; color: #444441; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #2C2C2A; color: #fff; padding: 10px 20px; border-radius: 20px;
+  font-size: 14px; font-weight: 500; transition: transform 0.3s ease;
+  pointer-events: none; white-space: nowrap; z-index: 200;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- Bandeau sync -->
+<div class="sync-banner" id="sync-banner">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-text">Synchronisation…</span>
+</div>
+
+<div class="app-shell">
+  <div class="overlay" id="overlay" onclick="closeMenu()"></div>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="baby-row">
+        <div class="baby-avatar">
+          <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iQ2FscXVlXzIiIGRhdGEtbmFtZT0iQ2FscXVlIDIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDYxMiA2MTIiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6ICMxZDFkMWI7CiAgICAgIH0KCiAgICAgIC5jbHMtMiB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgICBzdHJva2U6ICMxZDFkMWI7CiAgICAgICAgc3Ryb2tlLW1pdGVybGltaXQ6IDEwOwogICAgICAgIHN0cm9rZS13aWR0aDogMTBweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTk5LjE3LDQ0MS4zMmMzNy40NSw2Ni4zNSwxMjYuMTEsODUuNCwxODUuNjMsMzcuMTcsMTguMzctMTQuNzksMzIuMjgtMzQuOTYsMzkuNS01Ny40LDAsMCwxLjE4LDQuOTgsMS4xOCw0Ljk4LTIwLjYzLTE5LjQyLTQ1Ljg5LTMzLjkyLTcyLjU5LTQzLjI1LTYuODUtMi4zNi0xNS41My00LjY1LTIyLjU0LTYuNDgtMjYuMDMtNi40OC01MS4yNi0xNy41NS03Mi42NC0zMy44NC0xNy4xNC0xMi45My0zMS43NC0yOC45Mi00My40MS00Ni42MiwxOS42OCwyNC42Niw0NC42Miw0NS4xMyw3My4zOSw1OC4xMywxMS43NCw1LjI3LDI0LjQxLDkuNiwzNi44NywxMi44LDcuMTksMS43MiwxNi4xOSwzLjUyLDIzLjI4LDUuNDYsMjAuOCw1Ljg2LDQwLjg3LDE0Ljc3LDU4Ljk1LDI2LjYzLDkuOTMsNi41OSwxOS41MSwxMy43NSwyNy44OSwyMi4zMSwwLDAtLjkxLDIuOS0uOTEsMi45LTIzLjk5LDc3LjE4LTExNS45NywxMTMuMzMtMTg1LjQ5LDcxLjY2LTIxLjQzLTEyLjczLTM4Ljc0LTMxLjg0LTQ5LjEtNTQuNDRoMFoiLz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xODMuNjYsMzk2LjIyYy0xNS4yLTI2LjIxLTI1LjIxLTYxLjMzLTIyLjMtOTEuNzMsMCwwLC42NC01LjQyLjY0LTUuNDIuMzktMi41OSwxLjU2LTUuMDIsMi45OS02Ljg2LDguODYtMTAuODgsMjguMTYtMTMuNTksNDEuMjQtMTUuMTIsNy0uNjgsMTQuMDItLjk2LDIxLjA0LS43NS0xLjY5LjUxLTMuMzguOTMtNS4wNiwxLjQyLTQuOSwxLjM0LTEwLjI0LDIuNzUtMTUuMDYsNC4xNS04LjY4LDIuNzEtMzMuNyw5LjA0LTM1LjU0LDE4LjUxLS4xMywxLjY2LS40Nyw1LjgxLS42NCw3LjQxLS4yMiw1LjcyLS4yMywxMS44My4xNSwxNy41MywxLjYsMjQuMDcsNi44Nyw0Ny4yNywxMi41NCw3MC44NWgwWiIvPgogIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE4NS44NiwyNzUuODhjLTE2LjM3LTEzLjc0LTI0LjAxLTM4LjE4LTE1LjI0LTU4LjMzLDkuMjEtMjAuMzIsMzEuNTUtMjguNTMsNDkuMTUtMzkuMzEsNS40NS0zLjQxLDEwLjc2LTcuMTksMTUuMTItMTEuOTIsMTEuMzctMTIuNDYsMTcuMzYtMjkuNjYsMjkuMDMtNDIuMzYsMjEuNzUtMjQuNjcsNTguMTYtMzYuNjMsODguNTEtMjAuODEsMTEuMDUsNS42MiwyMC41LDE0LjQzLDI2LjAxLDI1LjU2Ljc5LDEuNTQsMS4zOCwzLjE5LDIuMDYsNC43Ny0xLjI2LTIuMDYtMi43NC00LjU2LTQuMjQtNi40NS0yLTIuNjctNC4zOS01LjI1LTYuODEtNy41NC0xNS4yNC0xMy45My0zNy41NC0xOS43Ny01Ny41Ny0xNC42NS0xNC4yNiwzLjQtMjcuMiwxMS40NS0zNy4zNywyMS45My0xMy41MywxMy41MS0xOS4xMywzMi4yLTMyLjQ0LDQ2LjMxLTE1LjM4LDE2LjE5LTM3Ljk3LDIxLjE4LTU0LjksMzQuNjYtNC4yMywzLjU0LTguMDEsNy44NC0xMC42NywxMi42Ny05LjI4LDE3Ljg2LTMuNiw0MC43NSw5LjM1LDU1LjQ4aDBaIi8+CiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzk1LjU5LDE1MS42NWMxMy4zNywxMC44LDEzLjYxLDMxLDcuNTUsNDUuODYtMi45OCw3Ljc1LTcuMjEsMTQuNzktMTEuNTMsMjEuNDUtMy43Niw2LjAyLTguMjIsMTEuMjYtNy45OSwxOC4zMy44OCwxMC45MSwxMC43NywxOC4zNywxNi42NCwyNy4zMSwxMS42LDE2LjY4LDE2LjcxLDM4LjU0LDEyLjYyLDU4LjA2LTEuMjEtMTguNzYtNy4yMS0zNi4wNC0xOC4wMi01MC42LTcuODktMTAuNjktMjAuMzctMTkuNDktMjEuMjItMzQuMjQtLjU5LTEzLjQ5LDEwLjM3LTIzLjE2LDE2LjY5LTMzLjY4LDEwLjM4LTE1LjM3LDE3LTM2LjAxLDUuMjYtNTIuNDloMFoiLz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNDYuOCwyNDIuOTdjLTguMjEtOS4yNC00LjgxLTI0LjA2LDMuMzQtMzIuMjcsMTMuNTktMTMuOTQsMzQuNTQtMTguMDMsNTMuMTctMTkuNzMsMjEuODQtMS44Miw0My40Ny0uMzMsNjEuMjUtMTMuNjksNC45My0zLjY1LDkuMTQtOC41OSwxMS43Ny0xNC4xOS4zNC0uODQuNy0xLjY5LDEuMDctMi41NS0xLjA2LDE1LjY2LTE0Ljg4LDI3Ljc2LTI4Ljg5LDMzLjE5LTE0LjMsNS41Ni0yOS40Miw1Ljk1LTQ0LjM3LDcuMjEtMTguMjYsMS42My00NS43Miw1LjExLTU1Ljk5LDIxLjk5LTMuNDcsNS45MS00LjQ2LDEzLjY5LTEuMzUsMjAuMDVoMFoiLz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNzUuMTcsMTc5LjA4YzMuNzMsMi45Niw0LjQ2LDguNDksMy4zNCwxMi45OC0xLjE1LDQuNTgtMy45OCw4LjU2LTYuNzEsMTIuMjEtNC4wNCw1LjM1LTYuOSw5LjM4LTYuOTMsMTUuNzcuNzgsMjMuNjctMTcuNTMsMzcuNzctMzYuMTgsNDguMjgsMCwwLTIuNzIsMS42LTIuNzIsMS42LDAsMC0yLjQ1LTEuNjgtMi40NS0xLjY4LTE2Ljc2LTExLjItMzUuNTQtMjYuMzEtMzYuODktNDguMS0uMTgtMi45OC4wNi01Ljk2Ljc0LTguNzkuMzMsNS43LDIuMDEsMTEuMTQsNC42NCwxNi4xMSw1LjE2LDkuOSwxMy40OCwxNy4yMiwyMi41NiwyMy41MSw0LjU3LDMuMTgsOS4zOCw2LjE1LDE0LjI1LDkuMjFsLTUuMTYtLjA4YzEzLjY1LTguNjYsMjguODgtMTguMTgsMzIuMy0zNC41MS43OC00LjMxLjgtOS4zMiwyLjgyLTEzLjcyLDEuMDktMi40MSwyLjUxLTQuNSw0LjA1LTYuMzIsNC4xMi01LDkuODMtOC45NCwxMi42LTE0LjU5LDEuNzktMy42NiwyLjE5LTguMzEtLjI3LTExLjloMFoiLz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMDEuMjIsMjU0LjM5Yy0xLjQ3LDkuNzEtMy4yMywyMS42MSw4LjQ3LDI1LjA2LDQuNzksMS41NywxMC43OCwyLjE3LDE1LjgyLDMuNTIsMjcuOTEsNy4xLDUyLjcyLDI5LjM0LDU5LjYyLDU3LjY5LTE1LjA1LTIyLjI5LTM2LjQ2LTQwLjM5LTYyLjIyLTQ4LjU5LTEuOTItLjYyLTUuODUtMS43Ny03LjgxLTIuMy0xOS43OS00Ljk4LTI0LjA5LTE4LjI5LTEzLjg4LTM1LjM5aDBaIi8+CiAgPHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMzcyLjA0LDM3Ni40NGMtMi4yMi0xLjgyLTEuMzItNS41Ny43MS03LjYxczQuODMtMy4xNSw2Ljg5LTUuMTRjMi45NS0yLjg1LDQuMDMtNy4xMyw2LjQ4LTEwLjQzLDMuMTEtNC4yLDguMTgtNi41LDEzLjI0LTcuOCwxMS4zNC0yLjkyLDI0LjAyLTEuNDYsMzMuNjksNS4xNCw5LjY3LDYuNiwxNS43OSwxOC42LDE0LjE3LDMwLjJzLTExLjYxLDIxLjg1LTIzLjMsMjIuNTkiLz4KPC9zdmc+" alt="Charlie">
+        </div>
+        <div>
+          <div class="baby-name" id="baby-name-display">Charlie</div>
+          <div class="baby-age"  id="baby-age">3 semaines</div>
+        </div>
+      </div>
+    </div>
+    <ul class="nav-list">
+      <li class="nav-item active" onclick="navigate('home',this)"        data-page="home">        🏠 Accueil</li>
+      <li class="nav-item"        onclick="navigate('tetees',this)"      data-page="tetees">      🤱 Tétées</li>
+      <li class="nav-item"        onclick="navigate('couches',this)"     data-page="couches">     🩹 Couches</li>
+      <li class="nav-item"        onclick="navigate('soins',this)"       data-page="soins">       💊 Soins</li>
+      <li class="nav-item"        onclick="navigate('routine',this)"     data-page="routine">     😴 Routine</li>
+      <li class="nav-item"        onclick="navigate('malade',this)"      data-page="malade">      🤒 Malade</li>
+      <li class="nav-item"        onclick="navigate('diagrammes',this)"  data-page="diagrammes">  📊 Diagrammes</li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="nav-item" onclick="navigate('reglages',this)" data-page="reglages">⚙️ Réglages</div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="menu-btn" onclick="toggleMenu()">☰</div>
+      <div class="topbar-title" id="topbar-title">Bonjour 👋</div>
+      <div class="topbar-right" id="topbar-date"></div>
+    </div>
+
+    <!-- ACCUEIL -->
+    <div class="page active" id="page-home">
+      <div class="module-content">
+        
+        <!-- HOME HERO - DEUX COLONNES -->
+        <div class="home-hero-v2">
+          <!-- COLONNE GAUCHE : ILLUSTRATION -->
+          <div class="hero-illustration">
+            <img src="./images/home.png" alt="Charlie" class="home-image">
+          </div>
+
+          <!-- COLONNE DROITE : INFOS -->
+          <div class="hero-content-v2">
+            <div class="hero-greeting-v2">Hey, quoi de neuf pour Charlie ?</div>
+            
+            <!-- Dernière pesée -->
+            <div class="hero-info">
+              <span class="info-emoji">👶</span>
+              <div class="info-text">
+                <div class="info-label">Dernière pesée</div>
+                <div class="info-value" id="home-last-weight">—</div>
+              </div>
+            </div>
+
+            <!-- Tétées hier -->
+            <div class="hero-info">
+              <span class="info-emoji">🧡</span>
+              <div class="info-text">
+                <div class="info-label">Tétées hier</div>
+                <div class="info-value" id="home-tetees-hier">—</div>
+              </div>
+            </div>
+
+            <!-- Prochain RDV -->
+            <div class="hero-info">
+              <span class="info-emoji">📅</span>
+              <div class="info-text">
+                <div class="info-label">Prochain RDV</div>
+                <div class="info-value" id="home-next-rdv">Aucun RDV</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHRASE DÉVELOPPEMENT -->
+        <div class="dev-phrase">
+          <span class="dev-emoji">🧠</span>
+          <div class="dev-text" id="home-dev-phrase">Chargement...</div>
+        </div>
+
+        <!-- DERNIERS ÉVÉNEMENTS (6 cartes) -->
+        <div class="last-events-section">
+          <div class="section-label">📊 Derniers événements</div>
+          <div class="last-events-grid">
+            <div class="event-card" onclick="navigate('tetees',this)">
+              <img src="./images/tetee.png" alt="Tétée" class="event-icon-img">
+              <div class="event-label">Dernière tétée</div>
+              <div class="event-value" id="home-last-tetee">—</div>
+            </div>
+            <div class="event-card" onclick="navigate('couches',this)">
+              <img src="./images/couche.png" alt="Couche" class="event-icon-img">
+              <div class="event-label">Dernière couche</div>
+              <div class="event-value" id="home-last-couche">—</div>
+            </div>
+            <div class="event-card" onclick="navigate('soins',this)">
+              <img src="./images/soins.png" alt="Soins" class="event-icon-img">
+              <div class="event-label">Vitamine D</div>
+              <div class="event-value" id="home-last-vitd">—</div>
+            </div>
+            <div class="event-card" onclick="navigate('diagrammes',this)">
+              <img src="./images/diagrammes.png" alt="Stats" class="event-icon-img">
+              <div class="event-label">Tétées aujourd'hui</div>
+              <div class="event-value" id="home-count-tetee">—</div>
+            </div>
+            <div class="event-card" onclick="navigate('routine',this)">
+              <img src="./images/dodo.png" alt="Routine" class="event-icon-img">
+              <div class="event-label">Routine</div>
+              <div class="event-value" id="home-routine-status">—</div>
+            </div>
+            <div class="event-card" onclick="navigate('malade',this)">
+              <img src="./images/malade.png" alt="Malade" class="event-icon-img">
+              <div class="event-label">Malade</div>
+              <div class="event-value" id="home-malade-status">—</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TÉTÉES -->
+    <div class="page" id="page-tetees">
+      <div class="module-content">
+        <div class="breast-section">
+          <div class="side-panel">
+            <div class="side-label">Gauche</div>
+            <div class="chrono-display" id="display-g">00:00</div>
+            <div class="chrono-stats" id="stats-g">
+              <div class="stat-active" id="active-g">00:00</div>
+              <div class="stat-pauses" id="pauses-g"></div>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="chrono-btn" id="btn-g" onclick="toggleChrono('g')"><span id="icon-g">▶</span></button>
+            </div>
+            <div class="last-feed" id="last-g">—</div>
+          </div>
+          <div class="breast-svg-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 612 612" aria-hidden="true">
+              <g id="sein-g">
+                <path id="sg-body"   d="M279.04,109.63c15.71,27.4,31.22,61.2,17.63,92.62-17.76,39.08-72.76,54.22-111.7,42.25-64.77-20.38-75.26-95.26-30.97-142.03,8.91-9,3.71-23.09-1.28-32.99-2.04-4.03-4.45-7.89-7.03-11.64,7.4,8.52,14.43,18.59,16.4,30.14.76,4.85.18,10.14-2.4,14.48-1.22,2.07-2.84,3.78-4.22,5.7-12.06,15.67-19.82,34.85-20.13,54.66-.96,44.95,34.24,75.78,78.01,75.88,28.91-.04,63.05-12.4,76.8-39.48,14.05-29.17.55-61.85-11.11-89.59h0Z" fill="#1d1d1b"/>
+                <path id="sg-areole" d="M211.37,173.53c-6.09.32-13.92.06-17.59,4.89-2.77,4.17-2.5,10.43-.15,14.76,2.25,4.17,7.45,6.79,12.08,5.07,5.93-2.14,9.25-8.6,11.96-14.45.55,3.67.44,7.49-.75,11.33-4.26,13.75-20.7,16.94-30.04,5.82-5.08-6.21-6-15.14-2.8-22.42,5.12-11.49,18.12-10.83,27.28-5h0Z" fill="#1d1d1b"/>
+                <circle id="sg-nipple" cx="201.3" cy="187" r="5.02" fill="#1d1d1b"/>
+              </g>
+              <g id="sein-d">
+                <path id="sd-body"   d="M330.37,110.8c-11.56,27.62-24.75,59.19-13.21,88.82,14.66,35.32,63.03,49.68,98.14,43.14,35.01-6.49,61.32-33.11,63.8-69.17,1.8-21.51-5.38-43.58-17.92-61.36-5.31-8.09-4.34-18.96-.22-27.28,2.16-4.07,5.24-7.61,8.96-10.15-3.36,2.99-5.99,6.7-7.59,10.78-2.96,7.59-3.06,17.78,1.94,24.31,2.88,3.54,5.58,7.26,8.03,11.14,12.45,19.62,17.58,44.04,13,66.99-11.55,56.39-73.12,78.16-123.73,59.92-26.89-9.06-51.36-30.01-54.28-59.66-3.2-27.98,9.78-53.9,23.07-77.49h0Z" fill="#1d1d1b"/>
+                <path id="sd-areole" d="M397.37,173.53c9.16-5.82,22.16-6.49,27.28,5,3.2,7.28,2.28,16.2-2.8,22.42-9.34,11.12-25.78,7.93-30.04-5.82-1.19-3.83-1.3-7.65-.75-11.32,2.71,5.85,6.03,12.31,11.96,14.45,4.63,1.72,9.83-.89,12.08-5.07,2.35-4.33,2.63-10.59-.15-14.76-3.68-4.83-11.49-4.56-17.59-4.89h0Z" fill="#1d1d1b"/>
+                <circle id="sd-nipple" cx="407.44" cy="187" r="5.02" fill="#1d1d1b"/>
+              </g>
+            </svg>
+          </div>
+          <div class="side-panel">
+            <div class="side-label">Droite</div>
+            <div class="chrono-display" id="display-d">00:00</div>
+            <div class="chrono-stats" id="stats-d">
+              <div class="stat-active" id="active-d">00:00</div>
+              <div class="stat-pauses" id="pauses-d"></div>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="chrono-btn" id="btn-d" onclick="toggleChrono('d')"><span id="icon-d">▶</span></button>
+            </div>
+            <div class="last-feed" id="last-d">—</div>
+          </div>
+        </div>
+        <div class="save-row">
+          <button class="btn-save" id="btn-save-tetee" onclick="saveTeteeSession()" disabled>✓ Enregistrer la tétée</button>
+          <button class="btn-secondary" onclick="toggleManualTetee()">✎ Manuel</button>
+        </div>
+        <div class="manual-form" id="manual-form-tetee">
+          <div class="form-title" id="manual-form-tetee-title">Saisie manuelle</div>
+          <div class="form-group">
+            <div class="form-label">Type</div>
+            <div class="type-toggle">
+              <button class="type-btn active" id="toggle-tetee"   onclick="switchManualType('tetee')">🤱 Tétée</button>
+              <button class="type-btn"        id="toggle-biberon" onclick="switchManualType('biberon')">🍼 Biberon</button>
+            </div>
+          </div>
+          
+          <div class="fields-tetee open" id="fields-tetee">
+            <div class="form-row">
+              <div class="form-group">
+                <div class="form-label">Sein</div>
+                <select id="manual-side-1">
+                  <option value="g">Sein gauche</option>
+                  <option value="d">Sein droit</option>
+                </select>
+              </div>
+              <div class="form-group"><div class="form-label">Début</div><input type="time" id="manual-start-1"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><div class="form-label">Fin</div><input type="time" id="manual-end-1"></div>
+              <div></div> 
+            </div>
+
+            <div id="fields-second-breast" style="display: none; border-top: 1px dashed #EF9F27; padding-top: 8px; margin-top: 8px;">
+              <div class="form-row">
+                <div class="form-group">
+                  <div class="form-label">2ème Sein</div>
+                  <select id="manual-side-2">
+                    <option value="d">Sein droit</option>
+                    <option value="g">Sein gauche</option>
+                  </select>
+                </div>
+                <div class="form-group"><div class="form-label">Début</div><input type="time" id="manual-start-2"></div>
+              </div>
+              <div class="form-row" style="margin-top: 8px;">
+                <div class="form-group"><div class="form-label">Fin</div><input type="time" id="manual-end-2"></div>
+                <div></div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 12px; width: 100%;">
+              <button class="btn-secondary" id="btn-toggle-second" type="button" onclick="window.toggleSecondBreastField()" style="flex: 1; padding: 10px;">＋ Deuxième sein</button>
+              <button class="btn-add" onclick="window.addManualTetee()" style="flex: 1; padding: 10px;">✓ Enregistrer la tétée</button>
+            </div>
+          </div>
+          
+          <div class="fields-biberon" id="fields-biberon">
+            <div class="form-row">
+              <div class="form-group">
+                <div class="form-label">Quantité (ml)</div>
+                <input type="number" id="bib-qty" placeholder="ex: 90" min="10" step="10">
+              </div>
+              <div class="form-group">
+                <div class="form-label">Heure</div>
+                <input type="time" id="bib-time">
+              </div>
+            </div>
+            <button class="btn-add" onclick="window.addBiberon()" style="margin-top: 12px; width: 100%;">✓ Enregistrer le biberon</button>
+          </div>
+
+        </div> <div>
+          <div class="section-label">Historique du jour</div>
+          <div class="history-list" id="history-tetees"><div class="empty-state">Aucune tétée enregistrée aujourd'hui</div></div>
+        </div>
+        <div class="chart-card">
+          <div class="form-title">📅 Dernières tétées d'hier</div>
+          <div style="font-size:12px;color:#888780;margin-top:2px">Utile juste après minuit pour savoir depuis quand Charlie n'a pas tété</div>
+          <div class="history-list" id="history-tetees-yesterday" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- COUCHES -->
+    <div class="page" id="page-couches">
+      <div class="module-content">
+        
+        <!-- DIAPER SECTION INTERACTIVE -->
+        <div class="diaper-section">
+          <img id="diaper-display" src="about:blank" alt="Couche" class="diaper-img">
+        </div>
+
+        <!-- BOUTONS D'ACTION -->
+        <div class="diaper-buttons">
+          <button class="diaper-btn" id="btn-pipi" onclick="selectCoucheType('pipi',this)">
+            💛
+            <span>Pipi</span>
+          </button>
+          <button class="diaper-btn" id="btn-caca" onclick="selectCoucheType('caca',this)">
+            💩
+            <span>Caca</span>
+          </button>
+          <button class="diaper-btn" id="btn-both" onclick="selectCoucheType('both',this)">
+            🔄
+            <span>Les deux</span>
+          </button>
+        </div>
+
+        <!-- SELLE ANORMALE (visible si caca / les deux) -->
+        <div id="couche-abnormal-zone" style="display:none;background:#fff;border:1px solid #EDE9E3;border-radius:12px;padding:10px 12px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#444441;cursor:pointer">
+            <input type="checkbox" id="couche-abnormal-check" onchange="toggleCoucheAbnormalSelect()">
+            Selle anormale ?
+          </label>
+          <select id="couche-abnormal-type" style="display:none;margin-top:8px">
+            <option value="molle">Molle</option>
+            <option value="liquide">Liquide / Diarrhée</option>
+            <option value="dure">Dure / Constipation</option>
+            <option value="sang">Avec sang / mucus</option>
+            <option value="autre">Autre couleur</option>
+          </select>
+        </div>
+
+        <!-- BOUTONS D'ENREGISTREMENT -->
+        <div class="save-row">
+          <button class="btn-save" id="btn-save-couche" onclick="saveCoucheQuick()" style="display:none;">💾 Enregistrer</button>
+          <button class="btn-secondary" onclick="toggleManualCouche()">✎ Manuel</button>
+        </div>
+
+        <!-- SAISIE MANUELLE -->
+        <div class="manual-form" id="manual-form-couche">
+          <div class="form-title">Saisie manuelle</div>
+          <div class="form-row">
+            <div class="form-group"><div class="form-label">Type</div><select id="manual-couche-type"><option value="pipi">💛 Pipi</option><option value="caca">💩 Caca</option><option value="both">🔄 Les deux</option></select></div>
+            <div class="form-group"><div class="form-label">Heure</div><input type="time" id="manual-couche-time"></div>
+          </div>
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#444441;cursor:pointer">
+              <input type="checkbox" id="manual-couche-abnormal-check" onchange="toggleManualCoucheAbnormalSelect()">
+              Selle anormale ?
+            </label>
+            <select id="manual-couche-abnormal-type" style="display:none;margin-top:8px">
+              <option value="molle">Molle</option>
+              <option value="liquide">Liquide / Diarrhée</option>
+              <option value="dure">Dure / Constipation</option>
+              <option value="sang">Avec sang / mucus</option>
+              <option value="autre">Autre couleur</option>
+            </select>
+          </div>
+          <div class="form-row" style="grid-template-columns:1fr auto">
+            <div class="form-group"><div class="form-label">Note (optionnel)</div><input type="text" id="manual-couche-note" placeholder="ex: légère rougeur"></div>
+            <div class="form-group" style="justify-content:flex-end"><button class="btn-add" onclick="addManualCouche()">＋</button></div>
+          </div>
+        </div>
+
+        <!-- HISTORIQUE -->
+        <div>
+          <div class="section-label">Historique du jour</div>
+          <div class="history-list" id="history-couches"><div class="empty-state">Aucune couche enregistrée aujourd'hui</div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SOINS -->
+    <div class="page" id="page-soins">
+      <div class="module-content">
+        <div>
+          <div class="section-label">Raccourcis</div>
+          <div class="shortcuts">
+            <div class="shortcut-card vitd"><div class="sc-icon">☀️</div><div class="sc-body"><div class="sc-name">Vitamine D</div><div class="sc-detail">Zymad · 1 goutte</div><div class="sc-last" id="last-vitd">Pas encore aujourd'hui</div></div><button class="sc-action vitd" onclick="quickAddSoin('vitd')">Donner</button></div>
+            <div class="shortcut-card doli"><div class="sc-icon">🌡️</div><div class="sc-body"><div class="sc-name">Doliprane</div><div class="sc-detail">Paracétamol · 2,5 ml</div><div class="sc-last" id="last-doli">Pas encore aujourd'hui</div></div><button class="sc-action doli" onclick="quickAddSoin('doli')">Donner</button></div>
+            <div class="shortcut-card bain"><div class="sc-icon">🛁</div><div class="sc-body"><div class="sc-name">Bain</div><div class="sc-detail">Toilette complète</div><div class="sc-last" id="last-bain">Pas encore aujourd'hui</div></div><button class="sc-action bain" onclick="quickAddSoin('bain')">Enregistrer</button></div>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">Autre soin</div>
+          <button class="btn-dashed" onclick="toggleAddSoin()">＋ Ajouter un soin ou médicament</button>
+          <div class="manual-form" id="add-form-soin" style="margin-top:10px">
+            <div class="form-title">Nouveau soin</div>
+            <div class="form-group"><div class="form-label">Type</div><div class="type-pills"><div class="pill selected" onclick="selectSoinType(this,'med')" data-type="med">💊 Médicament</div><div class="pill" onclick="selectSoinType(this,'autre')" data-type="autre">✏️ Autre</div></div></div>
+            <div class="form-row">
+              <div class="form-group"><div class="form-label">Nom</div><input type="text" id="soin-name" placeholder="ex: Smecta"></div>
+              <div class="form-group"><div class="form-label">Dose</div><input type="text" id="soin-dose" placeholder="ex: 1 sachet"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><div class="form-label">Heure</div><input type="time" id="soin-time"></div>
+              <div class="form-group"><div class="form-label">Note</div><input type="text" id="soin-note" placeholder="optionnel"></div>
+            </div>
+            <button class="btn-save" style="border-color:#7EB86A;background:#EBF5E6;color:#2D5E1E" onclick="addSoin()">✓ Enregistrer</button>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">Historique du jour</div>
+          <div class="history-list" id="history-soins"><div class="empty-state">Aucun soin enregistré aujourd'hui</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUTINE -->
+    <div class="page" id="page-routine">
+      <div class="module-content">
+
+        <div class="routine-header-img">
+          <img src="./images/dodo.png" alt="Routine">
+        </div>
+
+        <!-- RÉVEIL -->
+        <div class="chart-card" id="card-leve">
+          <div class="form-title">🌅 Réveil</div>
+          <div id="leve-input-zone">
+            <div class="form-group">
+              <div class="form-label">Heure de lévée</div>
+              <input type="time" id="routine-leve-time">
+            </div>
+            <button class="btn-save" style="width:100%;margin-top:10px" onclick="saveLeveHeure()">✓ Enregistrer le réveil</button>
+          </div>
+          <div id="leve-display-zone" style="display:none">
+            <div class="routine-status-text" id="leve-display-text"></div>
+            <button class="btn-secondary" style="margin-top:8px" onclick="editLeveHeure()">✎ Modifier</button>
+          </div>
+        </div>
+
+        <!-- SIESTES -->
+        <div class="chart-card">
+          <div class="form-title">😴 Siestes</div>
+          <div class="form-row">
+            <div class="form-group"><div class="form-label">Début</div><input type="time" id="sieste-start"></div>
+            <div class="form-group"><div class="form-label">Fin</div><input type="time" id="sieste-end"></div>
+          </div>
+          <button class="btn-add" style="width:100%" onclick="addSieste()">＋ Ajouter la sieste</button>
+          <div style="font-size:12px;color:#888780" id="siestes-total-today"></div>
+          <div class="history-list" id="history-siestes"><div class="empty-state">Aucune sieste enregistrée aujourd'hui</div></div>
+        </div>
+
+        <!-- COUCHER -->
+        <div class="chart-card" id="card-couche">
+          <div class="form-title">🌙 Coucher</div>
+          <div id="couche-input-zone">
+            <div class="form-group">
+              <div class="form-label">Heure de coucher</div>
+              <input type="time" id="routine-couche-time">
+            </div>
+            <button class="btn-save" style="width:100%;margin-top:10px" onclick="saveCoucheHeure()">✓ Enregistrer le coucher</button>
+          </div>
+          <div id="couche-display-zone" style="display:none">
+            <div class="routine-status-text" id="couche-display-text"></div>
+            <button class="btn-secondary" style="margin-top:8px" onclick="editCoucheHeure()">✎ Modifier</button>
+          </div>
+        </div>
+
+        <!-- HISTORIQUE DE LA VEILLE -->
+        <div class="chart-card">
+          <div class="form-title">📅 Hier</div>
+          <div id="routine-yesterday" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MALADE -->
+    <div class="page" id="page-malade">
+      <div class="module-content">
+        <div class="routine-header-img">
+          <img src="./images/malade.png" alt="Malade">
+        </div>
+
+        <!-- VOMISSEMENTS -->
+        <div class="chart-card">
+          <div class="form-title">🤮 Vomissements / Renvois</div>
+          <div class="form-row">
+            <div class="form-group"><div class="form-label">Heure</div><input type="time" id="vomi-time"></div>
+            <div class="form-group"><div class="form-label">Note (optionnel)</div><input type="text" id="vomi-note" placeholder="ex: après le biberon"></div>
+          </div>
+          <button class="btn-add" style="width:100%" onclick="addVomi()">＋ Ajouter un renvoi</button>
+          <div class="history-list" id="history-vomis"></div>
+          <button class="btn-secondary" style="width:100%" onclick="toggleHistoryRange('vomis')" id="btn-more-vomis">Afficher plus (7 jours)</button>
+        </div>
+
+        <!-- TEMPÉRATURE -->
+        <div class="chart-card">
+          <div class="form-title">🌡️ Température</div>
+          <div class="form-row">
+            <div class="form-group"><div class="form-label">Température (°C)</div><input type="number" id="temp-val" placeholder="ex: 37.5" min="30" max="43" step="0.1"></div>
+            <div class="form-group"><div class="form-label">Heure</div><input type="time" id="temp-time"></div>
+          </div>
+          <button class="btn-add" style="width:100%" onclick="addTemperature()">＋ Ajouter une mesure</button>
+          <div class="history-list" id="history-temperatures"></div>
+          <button class="btn-secondary" style="width:100%" onclick="toggleHistoryRange('temperatures')" id="btn-more-temperatures">Afficher plus (7 jours)</button>
+        </div>
+
+        <!-- SELLES ANORMALES -->
+        <div class="chart-card">
+          <div class="form-title">💩 Selles anormales</div>
+          <div class="form-row">
+            <div class="form-group">
+              <div class="form-label">Type</div>
+              <select id="selle-type">
+                <option value="molle">Molle</option>
+                <option value="liquide">Liquide / Diarrhée</option>
+                <option value="dure">Dure / Constipation</option>
+                <option value="sang">Avec sang / mucus</option>
+                <option value="autre">Autre couleur</option>
+              </select>
+            </div>
+            <div class="form-group"><div class="form-label">Heure</div><input type="time" id="selle-time"></div>
+          </div>
+          <div class="form-group"><div class="form-label">Note (optionnel)</div><input type="text" id="selle-note" placeholder="ex: verdâtre"></div>
+          <button class="btn-add" style="width:100%" onclick="addSelle()">＋ Ajouter</button>
+          <div class="history-list" id="history-selles"></div>
+          <button class="btn-secondary" style="width:100%" onclick="toggleHistoryRange('selles')" id="btn-more-selles">Afficher plus (7 jours)</button>
+        </div>
+
+        <!-- BILAN DU JOUR (QUESTIONNAIRE) -->
+        <div class="chart-card">
+          <div class="form-title">📋 Bilan du jour</div>
+
+          <div id="bilan-summary-zone" style="display:none">
+            <div class="routine-status-text" id="bilan-summary-text"></div>
+            <button class="btn-secondary" style="margin-top:8px" onclick="openBilanForm()">✎ Modifier le bilan</button>
+          </div>
+
+          <div id="bilan-form-zone" style="display:flex;flex-direction:column;gap:12px">
+
+            <div class="form-group">
+              <div class="form-label">1. Humeur / comportement global</div>
+              <div class="type-pills">
+                <div class="pill" data-group="humeur" onclick="selectBilanOption(this,'humeur','forme')">En forme</div>
+                <div class="pill" data-group="humeur" onclick="selectBilanOption(this,'humeur','calme')">Calme</div>
+                <div class="pill" data-group="humeur" onclick="selectBilanOption(this,'humeur','grognon')">Grognon</div>
+                <div class="pill" data-group="humeur" onclick="selectBilanOption(this,'humeur','agite')">Très agité</div>
+                <div class="pill" data-group="humeur" onclick="selectBilanOption(this,'humeur','lethargique')">Léthargique (mou)</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">2. Éveil / énergie</div>
+              <div class="type-pills">
+                <div class="pill" data-group="eveil" onclick="selectBilanOption(this,'eveil','normal')">Normal</div>
+                <div class="pill" data-group="eveil" onclick="selectBilanOption(this,'eveil','fatigue')">Un peu fatigué</div>
+                <div class="pill" data-group="eveil" onclick="selectBilanOption(this,'eveil','distant')">Éveillé mais distant</div>
+                <div class="pill" data-group="eveil" onclick="selectBilanOption(this,'eveil','somnolent')">Très somnolent</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">3. Qualité des pleurs</div>
+              <div class="type-pills">
+                <div class="pill" data-group="pleurs" onclick="selectBilanOption(this,'pleurs','habituels')">Pleurs habituels</div>
+                <div class="pill" data-group="pleurs" onclick="selectBilanOption(this,'pleurs','plus')">Plus que d'habitude</div>
+                <div class="pill" data-group="pleurs" onclick="selectBilanOption(this,'pleurs','inconsolable')">Inconsolable</div>
+                <div class="pill" data-group="pleurs" onclick="selectBilanOption(this,'pleurs','aucun')">Pas de pleurs</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">4. Appétit du jour</div>
+              <div class="type-pills">
+                <div class="pill" data-group="appetit" onclick="selectBilanOption(this,'appetit','normal')">Normal</div>
+                <div class="pill" data-group="appetit" onclick="selectBilanOption(this,'appetit','diminue')">Diminué</div>
+                <div class="pill" data-group="appetit" onclick="selectBilanOption(this,'appetit','refus')">Refus catégorique</div>
+                <div class="pill" data-group="appetit" onclick="selectBilanOption(this,'appetit','augmente')">Augmenté</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">5. Comportement pendant les repas</div>
+              <div class="type-pills">
+                <div class="pill" data-group="repas" onclick="selectBilanOption(this,'repas','serein')">Serein</div>
+                <div class="pill" data-group="repas" onclick="selectBilanOption(this,'repas','tord')">Se tord de douleur</div>
+                <div class="pill" data-group="repas" onclick="selectBilanOption(this,'repas','enerve')">S'énerve sur le sein/biberon</div>
+                <div class="pill" data-group="repas" onclick="selectBilanOption(this,'repas','refuse_apres')">Refuse après quelques gorgées</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">6. Bébé a-t-il semblé avoir mal quelque part ?</div>
+              <div class="type-pills">
+                <div class="pill" data-group="douleur" onclick="selectBilanOption(this,'douleur','non')">Non</div>
+                <div class="pill" data-group="douleur" onclick="selectBilanOption(this,'douleur','ventre')">Ventre (gaz, coliques)</div>
+                <div class="pill" data-group="douleur" onclick="selectBilanOption(this,'douleur','dents')">Dents</div>
+                <div class="pill" data-group="douleur" onclick="selectBilanOption(this,'douleur','autre')">Autre / ne sait pas</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">7. État de sa peau</div>
+              <div class="type-pills">
+                <div class="pill" data-group="peau" onclick="selectBilanOption(this,'peau','normale')">Normale</div>
+                <div class="pill" data-group="peau" onclick="selectBilanOption(this,'peau','boutons')">Boutons/Plaques</div>
+                <div class="pill" data-group="peau" onclick="selectBilanOption(this,'peau','fesses')">Fesses très rouges</div>
+                <div class="pill" data-group="peau" onclick="selectBilanOption(this,'peau','seche')">Peau très sèche</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">8. Respiration / voies aériennes</div>
+              <div class="type-pills">
+                <div class="pill" data-group="respiration" onclick="selectBilanOption(this,'respiration','ras')">RAS</div>
+                <div class="pill" data-group="respiration" onclick="selectBilanOption(this,'respiration','nez')">Nez bouché/qui coule</div>
+                <div class="pill" data-group="respiration" onclick="selectBilanOption(this,'respiration','toux')">Toux grasse/sèche</div>
+                <div class="pill" data-group="respiration" onclick="selectBilanOption(this,'respiration','rapide')">Respiration rapide/sifflante</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">9. Traitement reçu aujourd'hui</div>
+              <div class="type-pills">
+                <div class="pill" data-group="traitement" onclick="selectBilanOption(this,'traitement','non')">Non</div>
+                <div class="pill" data-group="traitement" onclick="selectBilanOption(this,'traitement','doliprane')">Doliprane</div>
+                <div class="pill" data-group="traitement" onclick="selectBilanOption(this,'traitement','vitamines')">Vitamines habituelles</div>
+                <div class="pill" data-group="traitement" onclick="selectBilanOption(this,'traitement','autre')">Autre traitement</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">10. Commentaire libre pour le pédiatre</div>
+              <input type="text" id="bilan-commentaire" placeholder="ex: A fait ses vaccins hier">
+            </div>
+
+            <button class="btn-save" style="width:100%" onclick="saveBilan()">✓ Enregistrer le bilan</button>
+          </div>
+
+          <div class="history-list" id="history-bilans" style="margin-top:10px"></div>
+          <button class="btn-secondary" style="width:100%" onclick="toggleHistoryRange('bilans')" id="btn-more-bilans">Afficher plus (7 jours)</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- DIAGRAMMES -->
+    <div class="page" id="page-diagrammes">
+      <div class="module-content">
+        <div class="period-selector">
+          <button class="period-btn active" onclick="setPeriod(7,this)">7 jours</button>
+          <button class="period-btn"        onclick="setPeriod(30,this)">30 jours</button>
+          <button class="period-btn"        onclick="setPeriod(0,this)">Tout</button>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">🤱 Tétées</div><div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div>Nombre</div><div class="legend-item"><div class="legend-dot" style="background:#F4D190"></div>Durée</div></div></div>
+          <div class="chart-stats" id="stats-tetees"></div><div class="chart-svg-wrap" id="chart-tetees"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">🩹 Couches</div><div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:#F5CB5C"></div>Pipi</div><div class="legend-item"><div class="legend-dot" style="background:#C8864A"></div>Caca</div></div></div>
+          <div class="chart-stats" id="stats-couches"></div><div class="chart-svg-wrap" id="chart-couches"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">⚖️ Poids</div></div>
+          <div class="chart-stats" id="stats-poids"></div><div class="chart-svg-wrap" id="chart-poids"></div>
+          <div class="weight-form">
+            <div class="wf-group"><label>Poids (g)</label><input type="number" id="weight-val" placeholder="ex: 3850" min="500" max="20000" step="10"></div>
+            <div class="wf-group"><label>Date</label><input type="date" id="weight-date"></div>
+            <button class="btn-add-green" onclick="addWeight()">＋</button>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">🌅 Heure de lévée</div></div>
+          <div class="chart-stats" id="stats-leve"></div><div class="chart-svg-wrap" id="chart-leve"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">🌙 Heure de coucher</div></div>
+          <div class="chart-stats" id="stats-couche"></div><div class="chart-svg-wrap" id="chart-couche"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">😴 Horaires des siestes</div></div>
+          <div class="chart-stats" id="stats-siestes"></div><div class="chart-svg-wrap" id="chart-siestes"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RÉGLAGES -->
+    <div class="page" id="page-reglages">
+      <div class="module-content">
+        <div class="chart-card">
+          <div class="form-title">👶 Bébé</div>
+          <div class="form-group" style="margin-top:10px"><div class="form-label">Prénom</div><input type="text" id="setting-name" placeholder="Charlie" value="Charlie"></div>
+          <div class="form-group" style="margin-top:8px"><div class="form-label">Date de naissance</div><input type="date" id="setting-birth"></div>
+          <button class="btn-save" style="margin-top:10px" onclick="saveSettings()">✓ Sauvegarder</button>
+        </div>
+        <div class="chart-card">
+          <div class="form-title">📅 Suivi Médical</div>
+          <div class="form-group" style="margin-top:10px"><div class="form-label">Prochain RDV - Date</div><input type="date" id="setting-rdv-date"></div>
+          <div class="form-group" style="margin-top:8px"><div class="form-label">Prochain RDV - Intitulé</div><input type="text" id="setting-rdv-title" placeholder="ex: PMI, Pédiatre, Dentiste..."></div>
+          <button class="btn-save" style="margin-top:10px" onclick="saveRdvSettings()">✓ Sauvegarder</button>
+        </div>
+        <div class="chart-card">
+          <div class="form-title">🔄 Sync & Sauvegarde</div>
+          <div style="font-size:13px;color:#888780;margin:8px 0 12px">Les données sont synchronisées en temps réel avec Firebase. Votre femme et vous partagez les mêmes données automatiquement.</div>
+          <div style="display:flex;gap:8px;flex-direction:column">
+            <button class="btn-secondary" style="width:100%;padding:12px;text-align:center" onclick="exportData()">⬇ Exporter les données (JSON)</button>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="form-title">ℹ️ À propos</div>
+          <div style="font-size:13px;color:#888780;margin:8px 0 12px">
+            <div><strong>Charlie App</strong></div>
+            <div style="margin-top:6px">Version <strong id="app-version">2.6</strong></div>
+            <div style="font-size:11px;margin-top:6px;opacity:0.8">Application de suivi de santé pour bébé</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, orderBy, Timestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ═══════════════════════════════════════════════════════════════
+// VERSION DE L'APP
+// ═══════════════════════════════════════════════════════════════
+const APP_VERSION = '2.6';
+
+// ── CONFIG FIREBASE ────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyA8v3KSty91I19wLfrntSZmmN9EBFy3IYw",
+  authDomain: "charlie-app-373cf.firebaseapp.com",
+  projectId: "charlie-app-373cf",
+  storageBucket: "charlie-app-373cf.firebasestorage.app",
+  messagingSenderId: "360587933174",
+  appId: "1:360587933174:web:1f32e0db50885ab41183d7"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+
+// ── UTILITAIRES ────────────────────────────────────────────
+const pad  = x  => String(x).padStart(2,'0');
+const fmtT = ts => new Date(ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+const fmtD = ms => { const s=Math.floor(ms/1000),m=Math.floor(s/60); return m===0?s+'s':m+'min'+(s%60?' '+(s%60)+'s':''); };
+const todayStr = () => new Date().toDateString();
+const fmtHeureFr = ts => { const d=new Date(ts); return d.getHours()+'h'+pad(d.getMinutes()); };
+const isoDate = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+function dayKeyDate(offset=0) { const d=new Date(); d.setDate(d.getDate()+offset); d.setHours(0,0,0,0); return d; }
+
+function timeToTs(t) { const [h,m]=t.split(':').map(Number),d=new Date(); d.setHours(h,m,0,0); return d.getTime(); }
+
+let toastTimer=null;
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function showSync(state) {
+  const banner=document.getElementById('sync-banner');
+  const dot=document.getElementById('sync-dot');
+  const txt=document.getElementById('sync-text');
+  if (state==='ok') { banner.classList.add('show'); banner.classList.remove('error'); dot.className='sync-dot'; txt.textContent='Synchronisé ✓'; setTimeout(()=>banner.classList.remove('show'),2000); }
+  else if (state==='syncing') { banner.classList.add('show'); banner.classList.remove('error'); dot.className='sync-dot syncing'; txt.textContent='Synchronisation…'; }
+  else if (state==='error') { banner.classList.add('show'); banner.classList.add('error'); dot.className='sync-dot error'; txt.textContent='Hors ligne – données locales'; }
+}
+
+// ── BASE DE DONNÉES LOCALE (cache) ────────────────────────
+let DB = { tetees:[], couches:[], soins:[], poids:[], routine:[], siestes:[], vomis:[], temperatures:[], bilans:[] };
+
+function saveLocal() {
+  try { localStorage.setItem('charlie_cache', JSON.stringify(DB)); } catch(e){}
+}
+function loadLocal() {
+  try { 
+    const r=localStorage.getItem('charlie_cache'); 
+    if(r) Object.assign(DB,JSON.parse(r)); 
+  } catch(e){}
+  
+  // Initialiser la date de naissance si pas encore définie
+  const settings = JSON.parse(localStorage.getItem('charlie_settings') || '{}');
+  if (!settings.birth) {
+    settings.birth = '2026-04-23'; // 23 avril 2026
+    localStorage.setItem('charlie_settings', JSON.stringify(settings));
+    localStorage.setItem('charlie_birth', '2026-04-23');
+  }
+}
+
+// ── FIREBASE : ÉCRITURE ───────────────────────────────────
+async function fbSet(collName, entry) {
+  try {
+    showSync('syncing');
+    await setDoc(doc(db, collName, String(entry.id)), entry);
+    showSync('ok');
+  } catch(e) { showSync('error'); }
+}
+
+async function fbDelete(collName, id) {
+  try { await deleteDoc(doc(db, collName, String(id))); }
+  catch(e) { showSync('error'); }
+}
+
+// ── FIREBASE : ÉCOUTE TEMPS RÉEL ─────────────────────────
+// On écoute les 30 derniers jours pour chaque collection
+const since = Date.now() - 30*24*60*60*1000;
+
+function listenCollection(collName, key, renderFn) {
+  const q = query(collection(db, collName), where('ts_num', '>=', since), orderBy('ts_num','desc'));
+  onSnapshot(q, snap => {
+    DB[key] = snap.docs.map(d => d.data());
+    saveLocal();
+    renderFn();
+    if (key==='tetees') { renderTeteeHistory(); renderYesterdayTetees(); updateLastLabels_tetee(); }
+    if (key==='couches') { updateCoucheCounters(); updateLastLabels_couche(); renderCoucheHistory(); renderSellesHistory(); }
+    if (key==='soins') { updateLastLabels_soin(); renderSoinHistory(); }
+    if (key==='poids') { renderPoidsChart(); }
+    if (key==='routine') { renderRoutineToday(); renderYesterdayRoutine(); }
+    if (key==='siestes') { renderSiestesHistory(); renderYesterdayRoutine(); }
+    if (key==='vomis') { renderVomisHistory(); }
+    if (key==='temperatures') { renderTemperaturesHistory(); }
+    if (key==='bilans') { renderBilanToday(); renderBilansHistory(); }
+    updateHome();
+  }, err => { showSync('error'); });
+}
+
+// Poids : pas de filtre date
+function listenPoids() {
+  onSnapshot(collection(db, 'poids'), snap => {
+    DB.poids = snap.docs.map(d => d.data()).sort((a,b)=>a.date.localeCompare(b.date));
+    saveLocal(); renderPoidsChart(); updateHome();
+  }, ()=>showSync('error'));
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+const PAGE_TITLES = { home:'Bonjour 👋', tetees:'Tétées', couches:'Couches', soins:'Soins', routine:'Routine', malade:'Malade', diagrammes:'Diagrammes', reglages:'Réglages' };
+
+window.navItem = function(page) { return document.querySelector(`[data-page="${page}"]`); };
+
+window.navigate = function(page, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const target=document.getElementById('page-'+page);
+  if(target) target.classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('topbar-title').textContent=PAGE_TITLES[page]||page;
+  closeMenu();
+  if(page==='home') updateHome();
+  if(page==='tetees') { renderTeteeHistory(); renderYesterdayTetees(); }
+  if(page==='routine') { renderRoutineToday(); renderYesterdayRoutine(); renderSiestesHistory(); }
+  if(page==='malade') { renderVomisHistory(); renderTemperaturesHistory(); renderSellesHistory(); renderBilanToday(); renderBilansHistory(); }
+  if(page==='diagrammes') renderDiagrammes();
+};
+
+window.toggleMenu = function() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); };
+window.closeMenu  = function() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); };
+
+// ── TÉTÉES ────────────────────────────────────────────────
+const CHS = {
+  g:{running:false,paused:false,startTs:null,elapsed:0,timer:null,sessionStart:null,pauseStart:null,totalPaused:0,pauseCount:0},
+  d:{running:false,paused:false,startTs:null,elapsed:0,timer:null,sessionStart:null,pauseStart:null,totalPaused:0,pauseCount:0}
+};
+
+
+
+// Images couches en base64
+// ═══════════════════════════════════════════════════════════════
+// PHRASES DE DÉVELOPPEMENT BÉBÉ (52 SEMAINES)
+// ═══════════════════════════════════════════════════════════════
+const BABY_DEVELOPMENT_PHRASES = [
+  "Semaine 1: Le nouveau-né a un réflexe de succion bien développé et reconnaît la voix maternelle.",
+  "Semaine 2: La vision du nouveau-né s'améliore progressivement; il peut fixer brièvement les objets.",
+  "Semaine 3: Les pleurs deviennent un mode de communication plus spécifique selon les besoins.",
+  "Semaine 4: Le bébé commence à suivre les objets avec les yeux (poursuite visuelle).",
+  "Semaine 5: Les sourires réflexes cèdent place à des sourires sociaux en réponse aux stimuli.",
+  "Semaine 6: Le bébé peut maintenir le contact visuel pendant quelques secondes.",
+  "Semaine 7: Amélioration du contrôle céphalique; la tête se maintient mieux lors du portage.",
+  "Semaine 8: Le bébé commence à vocaliser; premiers gazouillis apparaissent.",
+  "Semaine 9: Amélioration de la reconnaissance des visages familiers; sourires plus fréquents.",
+  "Semaine 10: Le bébé suit les objets sur une plus grande distance.",
+  "Semaine 11: Les mains restent moins serrées; début de la découverte des mains.",
+  "Semaine 12: Amélioration du contrôle des muscles du cou; tête plus stable.",
+  "Semaine 13: Le bébé commence à crier pour attirer l'attention.",
+  "Semaine 14: Les réflexes primitifs s'atténuent progressivement.",
+  "Semaine 15: Amélioration de la coordination des yeux et des mains.",
+  "Semaine 16: Le bébé peut maintenir sa tête droite quelques secondes.",
+  "Semaine 17: Augmentation de la production de salive; début possible du processus de dentition.",
+  "Semaine 18: Le bébé commence à saisir volontairement les objets.",
+  "Semaine 19: Amélioration de la coordination main-bouche; les mains vont à la bouche.",
+  "Semaine 20: Le rire devient plus intense et plus social.",
+  "Semaine 21: Début du babillage avec consonnes (ba, da, ga).",
+  "Semaine 22: Le bébé reconnaît son propre nom.",
+  "Semaine 23: Amélioration de la capacité à maintenir sa tête sans support.",
+  "Semaine 24: Le bébé peut se retourner partiellement (amorce du retournement).",
+  "Semaine 25: Début du roulement sur le côté; étape vers le retournement complet.",
+  "Semaine 26: La vision des couleurs et la perception de la profondeur s'améliorent.",
+  "Semaine 27: Début de l'intérêt pour les aliments solides; disparition du réflexe d'extrusion.",
+  "Semaine 28: Amélioration de la stabilité assis avec un soutien léger.",
+  "Semaine 29: Le bébé peut passer des objets d'une main à l'autre.",
+  "Semaine 30: Développement de la pince inférieure pour saisir les petits objets.",
+  "Semaine 31: La conscience de soi commence à émerger; intérêt pour le miroir.",
+  "Semaine 32: Amélioration de la production de sons; imitation des intonations.",
+  "Semaine 33: Apparition de la anxiété de séparation; le bébé préfère ses parents.",
+  "Semaine 34: Amélioration de la position assise; moins de soutien nécessaire.",
+  "Semaine 35: Développement de la permanence de l'objet; compréhension du cache-cache.",
+  "Semaine 36: Le bébé commence à se déplacer (rampement ou traînage).",
+  "Semaine 37: Amélioration de la coordination fine; pince à trois doigts établie.",
+  "Semaine 38: Les babillages deviennent plus complexes avec répétition de syllabes.",
+  "Semaine 39: Amélioration de la compréhension du langage; reconnaissance de mots courants.",
+  "Semaine 40: Le bébé peut se soutenir brièvement en position debout avec appui.",
+  "Semaine 41: Amélioration de la motricité; déplacement plus rapide et assuré.",
+  "Semaine 42: Compréhension du non; réaction à l'interdiction.",
+  "Semaine 43: Imitation de gestes simples (applaudissements, au revoir).",
+  "Semaine 44: Jeu de la permanence de l'objet plus élaboré; compréhension du passage du temps.",
+  "Semaine 45: Le bébé peut pointer du doigt pour montrer des objets.",
+  "Semaine 46: Premiers pas hésitants; marche avec soutien minimal.",
+  "Semaine 47: Amélioration de la compréhension des ordres simples.",
+  "Semaine 48: Développement de l'empathie; réaction aux émotions des autres.",
+  "Semaine 49: Amélioration de la marche; meilleure équilibre et coordination.",
+  "Semaine 50: Premiers mots significatifs; vocabulaire initial d'une à trois mots.",
+  "Semaine 51: Capacité croissante à exprimer ses préférences et besoins.",
+  "Semaine 52: Compréhension de concepts simples (oui, non, moi, toi)."
+];
+
+function getBabyDevelopmentPhrase(birthDate) {
+  if (!birthDate) return "Enregistrez la date de naissance de Charlie dans les réglages pour voir les infos de développement.";
+  const today = new Date();
+  const birth = new Date(birthDate);
+  const diffMs = today - birth;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const weekNumber = Math.floor(diffDays / 7);
+  const phraseIndex = Math.min(weekNumber, BABY_DEVELOPMENT_PHRASES.length - 1);
+  return BABY_DEVELOPMENT_PHRASES[phraseIndex];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GESTION DU PROCHAIN RDV
+// ═══════════════════════════════════════════════════════════════
+window.saveRdvSettings = function() {
+  const rdvDate = document.getElementById('setting-rdv-date').value;
+  const rdvTitle = document.getElementById('setting-rdv-title').value;
+  
+  if (rdvDate && rdvTitle) {
+    localStorage.setItem('charlie_rdv_date', rdvDate);
+    localStorage.setItem('charlie_rdv_title', rdvTitle);
+    showToast('✓ RDV sauvegardé');
+    updateRdvDisplay();
+  } else {
+    showToast('⚠ Remplissez date et intitulé');
+  }
+};
+
+function updateHomeDisplayV2() {
+  // Dernier poids
+  if (DB.poids && DB.poids.length > 0) {
+    const lastWeight = DB.poids.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    const kg = Math.floor(lastWeight.g / 1000);
+    const g = lastWeight.g % 1000;
+    document.getElementById('home-last-weight').textContent = `${kg}kg${g}` || '—';
+  }
+  
+  // Tétées hier
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toDateString();
+  const teteesHier = DB.tetees.filter(s => {
+    const ts = typeof s.startTs === 'number' ? s.startTs : (s.startTs && s.startTs.toMillis ? s.startTs.toMillis() : Date.now());
+    return s.type === 'tetee' && new Date(ts).toDateString() === yesterdayStr;
+  }).length;
+  document.getElementById('home-tetees-hier').textContent = `${teteesHier} tétées hier` || '—';
+}
+
+function updateRdvDisplay() {
+  const rdvDate = localStorage.getItem('charlie_rdv_date');
+  const rdvTitle = localStorage.getItem('charlie_rdv_title');
+  const rdvElement = document.getElementById('home-next-rdv');
+  
+  if (rdvDate && rdvTitle) {
+    const d = new Date(rdvDate);
+    const dateStr = d.toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'short'});
+    rdvElement.textContent = `${rdvTitle} - ${dateStr}`;
+  } else {
+    rdvElement.textContent = 'Aucun RDV enregistré';
+  }
+}
+
+function loadRdvSettings() {
+  const rdvDate = localStorage.getItem('charlie_rdv_date');
+  const rdvTitle = localStorage.getItem('charlie_rdv_title');
+  
+  if (rdvDate) document.getElementById('setting-rdv-date').value = rdvDate;
+  if (rdvTitle) document.getElementById('setting-rdv-title').value = rdvTitle;
+}
+
+const COUCHE_IMGS = {
+  couche_nb: './images/couche_NB.png',
+  pipi: './images/pipi.png',
+  caca: './images/caca.png',
+  both: './images/caca_et_pipi.png'
+};
+
+// Sauvegarder l'état du chrono dans localStorage
+function saveChronoState() {
+  try {
+    localStorage.setItem('charlie_chrono', JSON.stringify({
+      g: { running: CHS.g.running, elapsed: CHS.g.elapsed, startTs: CHS.g.startTs, sessionStart: CHS.g.sessionStart },
+      d: { running: CHS.d.running, elapsed: CHS.d.elapsed, startTs: CHS.d.startTs, sessionStart: CHS.d.sessionStart }
+    }));
+  } catch(e) { console.warn('Impossible de sauvegarder l\'état du chrono'); }
+}
+
+// Restaurer l'état du chrono depuis localStorage
+function restoreChronoState() {
+  try {
+    const saved = localStorage.getItem('charlie_chrono');
+    if (!saved) return;
+    
+    const state = JSON.parse(saved);
+    const now = Date.now();
+    
+    // Si un chrono était en cours, recalculer le temps écoulé
+    ['g', 'd'].forEach(side => {
+      if (state[side].running && state[side].startTs) {
+        // Recalculer elapsed en fonction du temps écoulé depuis la sauvegarde
+        const timeSinceSave = now - state[side].startTs;
+        CHS[side].elapsed = state[side].elapsed + timeSinceSave;
+        CHS[side].sessionStart = state[side].sessionStart;
+        // Redémarrer le chrono
+        restartChrono(side);
+      } else {
+        // Restaurer l'état sans modifier running
+        CHS[side].elapsed = state[side].elapsed || 0;
+        CHS[side].sessionStart = state[side].sessionStart;
+      }
+    });
+    
+    updateChronoUI('g');
+    updateChronoUI('d');
+    document.getElementById('btn-save-tetee').disabled=!(CHS.g.elapsed>0||CHS.d.elapsed>0)||CHS.g.running||CHS.d.running;
+  } catch(e) { console.warn('Impossible de restaurer l\'état du chrono'); }
+}
+
+// Redémarrer un chrono (utilisé pour restauration)
+function restartChrono(side) {
+  CHS[side].running = true;
+  CHS[side].startTs = Date.now();
+  CHS[side].timer = setInterval(() => {
+    document.getElementById('display-'+side).textContent = fmt_c(CHS[side].elapsed + Date.now() - CHS[side].startTs);
+  }, 1000);
+}
+
+function setSeinColor(side,mode) {
+  const p=side==='g'?'sg':'sd';
+  const c={idle:'#1d1d1b',running:'#EF9F27',used:'#C8864A'}[mode];
+  ['body','areole','nipple'].forEach(k=>{const el=document.getElementById(p+'-'+k);if(el)el.setAttribute('fill',c);});
+}
+function fmt_c(ms) { const s=Math.floor(ms/1000),m=Math.floor(s/60); return pad(m)+':'+pad(s%60); }
+
+function updateChronoUI(side) {
+  const s=CHS[side];
+  const btn=document.getElementById('btn-'+side);
+  const icon=document.getElementById('icon-'+side), disp=document.getElementById('display-'+side);
+  
+  if(s.running){ 
+    btn.classList.add('running'); 
+    icon.textContent=s.paused?'▶':'⏸'; 
+    disp.classList.add('running'); 
+    setSeinColor(side,'running');
+  }
+  else { 
+    btn.classList.remove('running'); 
+    icon.textContent='▶'; 
+    disp.classList.remove('running'); 
+    setSeinColor(side,s.elapsed>0?'used':'idle');
+  }
+  
+  disp.textContent=fmt_c(s.elapsed+(s.running&&!s.paused?Date.now()-s.startTs:0));
+  updatePauseStats(side);
+}
+
+window.toggleChrono = function(side) {
+  const s=CHS[side], other=side==='g'?'d':'g';
+  if(s.running){ clearInterval(s.timer); s.elapsed+=Date.now()-s.startTs; s.running=false; s.paused=false; s.startTs=null; }
+  else {
+    if(CHS[other].running){ clearInterval(CHS[other].timer); CHS[other].elapsed+=Date.now()-CHS[other].startTs; CHS[other].running=false; CHS[other].paused=false; updateChronoUI(other); }
+    if(!s.sessionStart) s.sessionStart=Date.now();
+    s.startTs=Date.now(); s.running=true; s.paused=false;
+    s.timer=setInterval(()=>{ document.getElementById('display-'+side).textContent=fmt_c(s.elapsed+Date.now()-s.startTs); },1000);
+  }
+  updateChronoUI(side);
+  document.getElementById('btn-save-tetee').disabled=!(CHS.g.elapsed>0||CHS.d.elapsed>0)||CHS.g.running||CHS.d.running;
+  saveChronoState(); // Sauvegarder après chaque changement
+};
+
+window.togglePause = function(side) {
+  const s=CHS[side];
+  if (!s.running) return; // Pause seulement si en cours
+  
+  if (s.paused) {
+    // Reprendre : récupérer le temps de pause
+    s.totalPaused += (Date.now() - s.pauseStart);
+    s.pauseStart = null;
+    s.paused = false;
+    // Relancer le chrono
+    s.startTs = Date.now();
+    s.timer = setInterval(() => { 
+      document.getElementById('display-'+side).textContent = fmt_c(s.elapsed + Date.now() - s.startTs); 
+    }, 1000);
+  } else {
+    // Mettre en pause
+    clearInterval(s.timer);
+    s.elapsed += Date.now() - s.startTs;
+    s.pauseStart = Date.now();
+    s.paused = true;
+    s.pauseCount++;
+  }
+  
+  updateChronoUI(side);
+  updatePauseStats(side);
+  saveChronoState();
+};
+
+function updatePauseStats(side) {
+  const s = CHS[side];
+  const activeMs = s.elapsed + (s.running && !s.paused ? (Date.now() - s.startTs) : 0);
+  const pausedMs = s.totalPaused + (s.paused ? (Date.now() - s.pauseStart) : 0);
+  
+  document.getElementById('active-'+side).textContent = fmt_c(activeMs);
+  const pauseText = s.pauseCount > 0 ? `${s.pauseCount} pause${s.pauseCount>1?'s':''} (${fmt_c(pausedMs)})` : '';
+  document.getElementById('pauses-'+side).textContent = pauseText;
+};
+
+window.saveTeteeSession = async function() {
+  const now=Date.now(), e={id:now, type:'tetee'};
+  if(CHS.g.elapsed>0&&CHS.d.elapsed>0){ e.side='both'; e.startTs=Math.min(CHS.g.sessionStart||(now-CHS.g.elapsed),CHS.d.sessionStart||(now-CHS.d.elapsed)); e.endTs=now; e.durationG=CHS.g.elapsed; e.durationD=CHS.d.elapsed; }
+  else if(CHS.g.elapsed>0){ e.side='g'; e.startTs=CHS.g.sessionStart||(now-CHS.g.elapsed); e.endTs=now; e.duration=CHS.g.elapsed; }
+  else { e.side='d'; e.startTs=CHS.d.sessionStart||(now-CHS.d.elapsed); e.endTs=now; e.duration=CHS.d.elapsed; }
+  e.ts_num = e.startTs;
+  ['g','d'].forEach(s=>{ clearInterval(CHS[s].timer); Object.assign(CHS[s],{running:false,elapsed:0,startTs:null,sessionStart:null}); updateChronoUI(s); });
+  document.getElementById('btn-save-tetee').disabled=true;
+  localStorage.removeItem('charlie_chrono'); // Nettoyer après enregistrement
+  await fbSet('tetees', e);
+  showToast('✓ Tétée enregistrée');
+};
+
+let manualType='tetee';
+let editingTeteeId=null;
+
+window.switchManualType = function(type) {
+  manualType = type;
+  document.getElementById('toggle-tetee').classList.toggle('active', type === 'tetee');
+  document.getElementById('toggle-biberon').classList.toggle('active', type === 'biberon');
+  const fieldsTetee = document.getElementById('fields-tetee');
+  const fieldsBiberon = document.getElementById('fields-biberon');
+  if (fieldsTetee && fieldsBiberon) {
+    fieldsTetee.classList.toggle('open', type === 'tetee');
+    fieldsBiberon.classList.toggle('open', type === 'biberon');
+  }
+  if (type === 'biberon' && !editingTeteeId) {
+    const n = new Date();
+    document.getElementById('bib-time').value = pad(n.getHours()) + ':' + pad(n.getMinutes());
+  }
+};
+
+window.toggleManualTetee = function() {
+  const f = document.getElementById('manual-form-tetee');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) { 
+    editingTeteeId = null;
+    document.getElementById('manual-form-tetee-title').textContent = 'Saisie manuelle';
+    const n = new Date(); 
+    document.getElementById('manual-end-1').value = pad(n.getHours()) + ':' + pad(n.getMinutes()); 
+    const s = new Date(n - 10 * 60000); 
+    document.getElementById('manual-start-1').value = pad(s.getHours()) + ':' + pad(s.getMinutes()); 
+    document.getElementById('fields-second-breast').style.display = 'none';
+    document.getElementById('btn-toggle-second').textContent = '＋ Deuxième sein';
+    switchManualType('tetee'); 
+  } else {
+    editingTeteeId = null;
+  }
+};
+
+window.editTetee = function(id) {
+  const entry = DB.tetees.find(s => String(s.id) === String(id));
+  if (!entry) return;
+  editingTeteeId = id;
+  const form = document.getElementById('manual-form-tetee');
+  form.classList.add('open');
+  document.getElementById('manual-form-tetee-title').textContent = 'Modifier l\'entrée';
+  document.getElementById('fields-second-breast').style.display = 'none';
+  document.getElementById('btn-toggle-second').textContent = '＋ Deuxième sein';
+
+  if (entry.type === 'biberon') {
+    switchManualType('biberon');
+    document.getElementById('bib-qty').value = entry.qty;
+    const d = new Date(entry.ts);
+    document.getElementById('bib-time').value = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  } else {
+    switchManualType('tetee');
+    if (entry.side === 'both') {
+      // Approximation : on suppose un enchaînement séquentiel des deux seins
+      const s1 = new Date(entry.startTs), e1 = new Date(entry.startTs + entry.durationG);
+      const s2 = new Date(entry.startTs + entry.durationG), e2 = new Date(entry.endTs);
+      document.getElementById('manual-side-1').value = 'g';
+      document.getElementById('manual-start-1').value = pad(s1.getHours()) + ':' + pad(s1.getMinutes());
+      document.getElementById('manual-end-1').value = pad(e1.getHours()) + ':' + pad(e1.getMinutes());
+      document.getElementById('fields-second-breast').style.display = 'block';
+      document.getElementById('btn-toggle-second').textContent = '✕ Retirer 2ème sein';
+      document.getElementById('manual-side-2').value = 'd';
+      document.getElementById('manual-start-2').value = pad(s2.getHours()) + ':' + pad(s2.getMinutes());
+      document.getElementById('manual-end-2').value = pad(e2.getHours()) + ':' + pad(e2.getMinutes());
+    } else {
+      document.getElementById('manual-side-1').value = entry.side;
+      const s = new Date(entry.startTs), e = new Date(entry.endTs);
+      document.getElementById('manual-start-1').value = pad(s.getHours()) + ':' + pad(s.getMinutes());
+      document.getElementById('manual-end-1').value = pad(e.getHours()) + ':' + pad(e.getMinutes());
+    }
+  }
+  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.toggleSecondBreastField = function() {
+  const target = document.getElementById('fields-second-breast');
+  const btn = document.getElementById('btn-toggle-second');
+  
+  if (target.style.display === 'none' || target.style.display === '') {
+    target.style.display = 'block';
+    btn.textContent = '✕ Retirer 2ème sein';
+    
+    // Pré-remplit les horaires du 2ème sein avec l'heure actuelle
+    const n = new Date();
+    document.getElementById('manual-end-2').value = pad(n.getHours()) + ':' + pad(n.getMinutes());
+    const s = new Date(n - 10 * 60000);
+    document.getElementById('manual-start-2').value = pad(s.getHours()) + ':' + pad(s.getMinutes());
+    
+    // Alterne automatiquement le côté sélectionné par défaut
+    const firstSide = document.getElementById('manual-side-1').value;
+    document.getElementById('manual-side-2').value = firstSide === 'g' ? 'd' : 'g';
+  } else {
+    target.style.display = 'none';
+    btn.textContent = '＋ Deuxième sein';
+  }
+};
+
+window.addManualTetee = async function() {
+  const side1 = document.getElementById('manual-side-1').value;
+  const st1 = timeToTs(document.getElementById('manual-start-1').value);
+  const et1 = timeToTs(document.getElementById('manual-end-1').value);
+  
+  if (!st1 || !et1 || et1 <= st1) {
+    showToast('⚠️ Horaires du 1er sein incorrects');
+    return;
+  }
+  
+  const hasSecond = document.getElementById('fields-second-breast').style.display === 'block';
+  let e = { id: editingTeteeId || Date.now(), type: 'tetee', manual: true };
+  
+  if (hasSecond) {
+    const side2 = document.getElementById('manual-side-2').value;
+    const st2 = timeToTs(document.getElementById('manual-start-2').value);
+    const et2 = timeToTs(document.getElementById('manual-end-2').value);
+    
+    if (!st2 || !et2 || et2 <= st2) {
+      showToast('⚠️ Horaires du 2ème sein incorrects');
+      return;
+    }
+    if (side1 === side2) {
+      showToast('⚠️ Sélectionnez deux seins différents');
+      return;
+    }
+    
+    // Session unifiée "Les deux seins"
+    e.side = 'both';
+    e.startTs = Math.min(st1, st2);
+    e.endTs = Math.max(et1, et2);
+    
+    let durG = 0, durD = 0;
+    if (side1 === 'g') durG += (et1 - st1); else durD += (et1 - st1);
+    if (side2 === 'g') durG += (et2 - st2); else durD += (et2 - st2);
+    
+    e.durationG = durG;
+    e.durationD = durD;
+    e.ts_num = e.startTs;
+  } else {
+    // Session classique un seul sein
+    e.side = side1;
+    e.startTs = st1;
+    e.endTs = et1;
+    e.duration = et1 - st1;
+    e.ts_num = st1;
+  }
+  
+  document.getElementById('manual-form-tetee').classList.remove('open');
+  const wasEditing = !!editingTeteeId;
+  await fbSet('tetees', e); 
+  showToast(wasEditing ? '✓ Tétée modifiée' : '✓ Tétée ajoutée');
+  editingTeteeId = null;
+};
+
+window.addBiberon = async function() {
+  const tv=document.getElementById('bib-time').value, qty=parseInt(document.getElementById('bib-qty').value);
+  if(!tv||!qty||qty<10) return;
+  const ts=timeToTs(tv);
+  const e={id:editingTeteeId || Date.now(),type:'biberon',ts,qty,ts_num:ts};
+  document.getElementById('manual-form-tetee').classList.remove('open');
+  document.getElementById('bib-qty').value='';
+  const wasEditing = !!editingTeteeId;
+  await fbSet('tetees',e);
+  showToast(wasEditing ? '✓ Biberon modifié' : '🍼 Biberon ajouté');
+  editingTeteeId = null;
+};
+
+window.deleteTetee = async function(id) { await fbDelete('tetees',id); };
+
+function updateLastLabels_tetee() {
+  ['g','d'].forEach(side=>{
+    const last=DB.tetees.find(s=>s.type==='tetee'&&(s.side===side||s.side==='both')&&new Date(s.startTs).toDateString()===todayStr());
+    document.getElementById('last-'+side).textContent=last?'Dernière : '+fmtT(last.endTs):'—';
+  });
+}
+
+function buildTeteeHistoryHTML(items) {
+  return items.map(s=>{
+    if(s.type==='biberon') return `<div class="history-item"><div class="hi-dot" style="background:#4A90D9"></div><div class="hi-body"><div class="hi-times">🍼 ${fmtT(s.ts)} <span class="badge badge-biberon">biberon</span></div><div class="hi-meta">Lait maternel · ${s.qty} ml</div></div><button class="hi-edit" onclick="editTetee(${s.id})" title="Modifier">✎</button><button class="hi-delete" onclick="deleteTetee(${s.id})">✕</button></div>`;
+    const label=s.side==='both'?'Gauche + Droite':s.side==='g'?'Sein gauche':'Sein droit';
+    const dot=s.side==='both'?'background:linear-gradient(135deg,#EF9F27 50%,#5DCAA5 50%)':s.side==='g'?'background:#EF9F27':'background:#5DCAA5';
+    const dur=s.side==='both'?'G: '+fmtD(s.durationG)+' · D: '+fmtD(s.durationD):fmtD(s.duration);
+    const badge=s.manual?'<span class="badge badge-manuel">manuel</span>':'';
+    return `<div class="history-item"><div class="hi-dot" style="${dot}"></div><div class="hi-body"><div class="hi-times">${fmtT(s.startTs)} → ${fmtT(s.endTs)}${badge}</div><div class="hi-meta">${label}</div></div><div class="hi-duration">${dur}</div><button class="hi-edit" onclick="editTetee(${s.id})" title="Modifier">✎</button><button class="hi-delete" onclick="deleteTetee(${s.id})">✕</button></div>`;
+  }).join('');
+}
+
+function renderTeteeHistory() {
+  const list=document.getElementById('history-tetees');
+  const items=DB.tetees.filter(s=>new Date(s.startTs||s.ts).toDateString()===todayStr());
+  if(!items.length){ list.innerHTML='<div class="empty-state">Aucune tétée enregistrée aujourd\'hui</div>'; return; }
+  list.innerHTML=buildTeteeHistoryHTML(items);
+}
+
+function renderYesterdayTetees() {
+  const list = document.getElementById('history-tetees-yesterday');
+  if (!list) return;
+  const dk = dayKeyDate(-1);
+  const items = DB.tetees
+    .filter(s => new Date(s.startTs||s.ts).toDateString() === dk.toDateString())
+    .sort((a,b) => (b.endTs||b.ts) - (a.endTs||a.ts))
+    .slice(0, 3);
+  if (!items.length) { list.innerHTML = '<div class="empty-state">Aucune tétée enregistrée hier</div>'; return; }
+  list.innerHTML = buildTeteeHistoryHTML(items);
+}
+
+// ── COUCHES ───────────────────────────────────────────────
+const TYPE_COUCHE={pipi:{emoji:'💛',label:'Pipi'},caca:{emoji:'💩',label:'Caca'},both:{emoji:'🔄',label:'Pipi + Caca'}};
+
+let selectedCoucheType = null; // Type sélectionné en attente d'enregistrement
+
+window.selectCoucheType = function(type, btnEl) {
+  selectedCoucheType = type;
+  btnEl.classList.remove('tapped'); void btnEl.offsetWidth; btnEl.classList.add('tapped');
+  setTimeout(()=>btnEl.classList.remove('tapped'), 300);
+  
+  // Changer l'image de la couche
+  const diaperDisplay = document.getElementById('diaper-display');
+  diaperDisplay.classList.add('changing');
+  diaperDisplay.src = COUCHE_IMGS[type];
+  setTimeout(() => diaperDisplay.classList.remove('changing'), 300);
+  
+  // Afficher/masquer la zone "selle anormale" (uniquement pertinente si caca ou les deux)
+  const abnormalZone = document.getElementById('couche-abnormal-zone');
+  if (type === 'caca' || type === 'both') {
+    abnormalZone.style.display = 'block';
+  } else {
+    abnormalZone.style.display = 'none';
+    document.getElementById('couche-abnormal-check').checked = false;
+    document.getElementById('couche-abnormal-type').style.display = 'none';
+  }
+  
+  // Afficher le bouton enregistrer
+  document.getElementById('btn-save-couche').style.display = 'block';
+};
+
+window.toggleCoucheAbnormalSelect = function() {
+  const checked = document.getElementById('couche-abnormal-check').checked;
+  document.getElementById('couche-abnormal-type').style.display = checked ? 'block' : 'none';
+};
+
+window.toggleManualCoucheAbnormalSelect = function() {
+  const checked = document.getElementById('manual-couche-abnormal-check').checked;
+  document.getElementById('manual-couche-abnormal-type').style.display = checked ? 'block' : 'none';
+};
+
+window.saveCoucheQuick = async function() {
+  if (!selectedCoucheType) {
+    showToast('⚠ Sélectionnez d\'abord un type');
+    return;
+  }
+  
+  const now = Date.now();
+  const entry = { id: now, type: selectedCoucheType, ts: now, ts_num: now };
+  const abnormalCheck = document.getElementById('couche-abnormal-check');
+  if (abnormalCheck && abnormalCheck.checked) {
+    entry.abnormal = true;
+    entry.selleType = document.getElementById('couche-abnormal-type').value;
+  }
+  await fbSet('couches', entry);
+  showToast(TYPE_COUCHE[selectedCoucheType].emoji + ' Couche enregistrée');
+  
+  // Rafraîchir l'historique et les compteurs
+  updateCoucheCounters();
+  updateLastLabels_couche();
+  renderCoucheHistory();
+  updateHome();
+  
+  // Réinitialiser
+  selectedCoucheType = null;
+  document.getElementById('diaper-display').src = COUCHE_IMGS.couche_nb;
+  document.getElementById('btn-save-couche').style.display = 'none';
+  document.getElementById('couche-abnormal-zone').style.display = 'none';
+  if (abnormalCheck) abnormalCheck.checked = false;
+  document.getElementById('couche-abnormal-type').style.display = 'none';
+};
+
+window.toggleManualCouche = function() {
+  const f=document.getElementById('manual-form-couche'); f.classList.toggle('open');
+  if(f.classList.contains('open')){ const n=new Date(); document.getElementById('manual-couche-time').value=pad(n.getHours())+':'+pad(n.getMinutes()); }
+};
+
+window.addManualCouche = async function() {
+  const type=document.getElementById('manual-couche-type').value;
+  const tv=document.getElementById('manual-couche-time').value;
+  const note=document.getElementById('manual-couche-note').value.trim();
+  if(!tv) return;
+  const [h,m]=tv.split(':').map(Number),d=new Date(); d.setHours(h,m,0,0);
+  const ts=d.getTime();
+  const e={id:Date.now(),type,ts,ts_num:ts,manual:true};
+  if(note) e.note=note;
+  const abnormalCheck = document.getElementById('manual-couche-abnormal-check');
+  if (abnormalCheck && abnormalCheck.checked) {
+    e.abnormal = true;
+    e.selleType = document.getElementById('manual-couche-abnormal-type').value;
+  }
+  document.getElementById('manual-form-couche').classList.remove('open');
+  document.getElementById('manual-couche-note').value='';
+  if (abnormalCheck) abnormalCheck.checked = false;
+  document.getElementById('manual-couche-abnormal-type').style.display = 'none';
+  await fbSet('couches',e); showToast('✓ Couche ajoutée');
+};
+
+function updateCoucheCounters() {
+  const t=DB.couches.filter(s=>{
+    const ts = typeof s.ts === 'number' ? s.ts : (s.ts && s.ts.toMillis ? s.ts.toMillis() : Date.now());
+    return new Date(ts).toDateString()===todayStr();
+  });
+  // Ces éléments n'existent plus, on les saute
+  // Les compteurs ont été supprimés du design
+}
+function updateLastLabels_couche() {
+  // Ces éléments n'existent plus dans le nouveau design
+  // On peut les ignorer
+}
+window.deleteCouche = async function(id) { await fbDelete('couches',id); };
+function renderCoucheHistory() {
+  const list=document.getElementById('history-couches');
+  if (!list) return;
+  
+  // Convertir s.ts en nombre (gère les Timestamp Firebase et les nombres)
+  const t=DB.couches.filter(s=>{
+    let ts = 0;
+    if (typeof s.ts === 'number') ts = s.ts;
+    else if (s.ts && typeof s.ts.toMillis === 'function') ts = s.ts.toMillis();
+    else if (s.ts && typeof s.ts.getTime === 'function') ts = s.ts.getTime();
+    else ts = Date.now();
+    
+    return new Date(ts).toDateString() === todayStr();
+  });
+  
+  if(!t.length){ 
+    list.innerHTML='<div class="empty-state">Aucune couche enregistrée aujourd\'hui</div>'; 
+    return; 
+  }
+  
+  list.innerHTML=t.map(s=>{ 
+    let ts = 0;
+    if (typeof s.ts === 'number') ts = s.ts;
+    else if (s.ts && typeof s.ts.toMillis === 'function') ts = s.ts.toMillis();
+    else if (s.ts && typeof s.ts.getTime === 'function') ts = s.ts.getTime();
+    else ts = Date.now();
+    
+    const info=TYPE_COUCHE[s.type]; 
+    const badge=s.manual?'<span class="badge badge-manuel">manuel</span>':''; 
+    const abnormalBadge=s.abnormal?` <span class="badge" style="background:#FEF0E6;color:#7D3A08">⚠️ ${SELLE_TYPES[s.selleType]||s.selleType}</span>`:'';
+    const note=s.note?` <span style="color:#B4B2A9">· ${s.note}</span>`:''; 
+    return `<div class="history-item"><div style="font-size:20px">${info.emoji}</div><div class="hi-body"><div class="hi-times">${fmtT(ts)}${badge}${abnormalBadge}</div><div class="hi-meta">${info.label}${note}</div></div><button class="hi-delete" onclick="deleteCouche(${s.id})">✕</button></div>`; 
+  }).join('');
+}
+
+// ── SOINS ─────────────────────────────────────────────────
+const SHORTCUTS={
+  vitd:{name:'Vitamine D',detail:'Zymad · 1 goutte',emoji:'☀️',color:'#F5CB5C'},
+  doli:{name:'Doliprane',detail:'Paracétamol · 2,5 ml',emoji:'🌡️',color:'#F4A261'},
+  bain:{name:'Bain',detail:'Toilette complète',emoji:'🛁',color:'#74C2E1'},
+};
+let selectedSoinType='med';
+window.selectSoinType = function(el,type){ document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected')); el.classList.add('selected'); selectedSoinType=type; };
+
+window.quickAddSoin = async function(key) {
+  const s=SHORTCUTS[key], now=Date.now();
+  await fbSet('soins',{id:now,key,name:s.name,detail:s.detail,emoji:s.emoji,color:s.color,ts:now,ts_num:now});
+  showToast(s.emoji+' '+s.name+' enregistré(e)');
+};
+
+window.toggleAddSoin = function() {
+  const f=document.getElementById('add-form-soin'); f.classList.toggle('open');
+  if(f.classList.contains('open')){ const n=new Date(); document.getElementById('soin-time').value=pad(n.getHours())+':'+pad(n.getMinutes()); }
+};
+
+window.addSoin = async function() {
+  const name=document.getElementById('soin-name').value.trim(), dose=document.getElementById('soin-dose').value.trim(), tv=document.getElementById('soin-time').value, note=document.getElementById('soin-note').value.trim();
+  if(!name||!tv){ showToast('⚠️ Nom et heure requis'); return; }
+  const [h,m]=tv.split(':').map(Number),d=new Date(); d.setHours(h,m,0,0); const ts=d.getTime();
+  const emojis={med:'💊',autre:'✏️'};
+  const e={id:Date.now(),key:selectedSoinType,name,dose,note,emoji:emojis[selectedSoinType]||'✏️',color:'#A78BCA',ts,ts_num:ts};
+  ['soin-name','soin-dose','soin-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('add-form-soin').classList.remove('open');
+  await fbSet('soins',e); showToast('✓ Soin enregistré');
+};
+
+function updateLastLabels_soin() {
+  ['vitd','doli','bain'].forEach(key=>{ const last=DB.soins.find(s=>s.key===key&&new Date(s.ts).toDateString()===todayStr()); document.getElementById('last-'+key).textContent=last?'Dernière fois : '+fmtT(last.ts):"Pas encore aujourd'hui"; });
+}
+window.deleteSoin = async function(id) { await fbDelete('soins',id); };
+function renderSoinHistory() {
+  const list=document.getElementById('history-soins');
+  const t=DB.soins.filter(s=>new Date(s.ts).toDateString()===todayStr());
+  if(!t.length){ list.innerHTML='<div class="empty-state">Aucun soin enregistré aujourd\'hui</div>'; return; }
+  list.innerHTML=t.map(s=>{ const detail=[s.dose,s.note].filter(Boolean).join(' · '); return `<div class="history-item"><div class="hi-dot" style="background:${s.color}"></div><div class="hi-body"><div class="hi-times">${s.emoji} ${s.name}${s.dose?` <span style="color:#888780;font-weight:400">· ${s.dose}</span>`:''}</div>${detail?`<div class="hi-meta">${detail}</div>`:''}</div><div class="hi-duration">${fmtT(s.ts)}</div><button class="hi-delete" onclick="deleteSoin(${s.id})">✕</button></div>`; }).join('');
+}
+
+// ── ROUTINE (RÉVEIL / SIESTES / COUCHER) ─────────────────
+function getRoutineEntry(dateObj) {
+  const key = isoDate(dateObj);
+  return DB.routine.find(r => r.date === key);
+}
+
+window.saveLeveHeure = async function() {
+  const tv = document.getElementById('routine-leve-time').value;
+  if (!tv) { showToast('⚠ Choisissez une heure'); return; }
+  const [h, m] = tv.split(':').map(Number);
+  const dk = dayKeyDate(0);
+  const key = isoDate(dk);
+  const t = new Date(); t.setHours(h, m, 0, 0);
+  const existing = getRoutineEntry(dk) || {};
+  const entry = { id: key, date: key, leve: t.getTime(), couche: existing.couche ?? null, ts_num: dk.getTime() };
+  await fbSet('routine', entry);
+  showToast('✓ Réveil enregistré');
+};
+
+window.editLeveHeure = function() {
+  document.getElementById('leve-input-zone').style.display = 'block';
+  document.getElementById('leve-display-zone').style.display = 'none';
+  const dk = dayKeyDate(0);
+  const r = getRoutineEntry(dk);
+  if (r && r.leve) {
+    const d = new Date(r.leve);
+    document.getElementById('routine-leve-time').value = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+};
+
+window.saveCoucheHeure = async function() {
+  const tv = document.getElementById('routine-couche-time').value;
+  if (!tv) { showToast('⚠ Choisissez une heure'); return; }
+  const [h, m] = tv.split(':').map(Number);
+  const dk = dayKeyDate(0);
+  const key = isoDate(dk);
+  const t = new Date(); t.setHours(h, m, 0, 0);
+  const existing = getRoutineEntry(dk) || {};
+  const entry = { id: key, date: key, leve: existing.leve ?? null, couche: t.getTime(), ts_num: dk.getTime() };
+  await fbSet('routine', entry);
+  showToast('✓ Coucher enregistré');
+};
+
+window.editCoucheHeure = function() {
+  document.getElementById('couche-input-zone').style.display = 'block';
+  document.getElementById('couche-display-zone').style.display = 'none';
+  const dk = dayKeyDate(0);
+  const r = getRoutineEntry(dk);
+  if (r && r.couche) {
+    const d = new Date(r.couche);
+    document.getElementById('routine-couche-time').value = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+};
+
+function renderRoutineToday() {
+  const dk = dayKeyDate(0);
+  const r = getRoutineEntry(dk);
+
+  const leveInput = document.getElementById('leve-input-zone');
+  const leveDisp  = document.getElementById('leve-display-zone');
+  if (leveInput && leveDisp) {
+    if (r && r.leve) {
+      leveInput.style.display = 'none';
+      leveDisp.style.display = 'block';
+      document.getElementById('leve-display-text').textContent = "Charlie s'est levé à " + fmtHeureFr(r.leve) + ' ce matin';
+    } else {
+      leveInput.style.display = 'block';
+      leveDisp.style.display = 'none';
+    }
+  }
+
+  const coucheInput = document.getElementById('couche-input-zone');
+  const coucheDisp  = document.getElementById('couche-display-zone');
+  if (coucheInput && coucheDisp) {
+    if (r && r.couche) {
+      coucheInput.style.display = 'none';
+      coucheDisp.style.display = 'block';
+      document.getElementById('couche-display-text').textContent = "Charlie s'est couché à " + fmtHeureFr(r.couche) + ' ce soir';
+    } else {
+      coucheInput.style.display = 'block';
+      coucheDisp.style.display = 'none';
+    }
+  }
+}
+
+function renderYesterdayRoutine() {
+  const el = document.getElementById('routine-yesterday');
+  if (!el) return;
+  const dk = dayKeyDate(-1);
+  const r = getRoutineEntry(dk);
+  const naps = DB.siestes.filter(s => new Date(s.startTs).toDateString() === dk.toDateString());
+
+  let html = '';
+  html += '<div class="routine-yesterday-line">🌅 Réveil : ' + (r && r.leve ? fmtHeureFr(r.leve) : '—') + '</div>';
+  if (naps.length) {
+    html += '<div class="routine-yesterday-line">😴 Siestes : ' + naps.map(n => fmtHeureFr(n.startTs) + '→' + fmtHeureFr(n.endTs)).join(', ') + '</div>';
+  } else {
+    html += '<div class="routine-yesterday-line">😴 Siestes : aucune</div>';
+  }
+  html += '<div class="routine-yesterday-line">🌙 Coucher : ' + (r && r.couche ? fmtHeureFr(r.couche) : '—') + '</div>';
+  el.innerHTML = html;
+}
+
+window.addSieste = async function() {
+  const sv = document.getElementById('sieste-start').value;
+  const ev = document.getElementById('sieste-end').value;
+  if (!sv || !ev) { showToast('⚠ Renseignez début et fin'); return; }
+  const st = timeToTs(sv), et = timeToTs(ev);
+  if (et <= st) { showToast('⚠ Heure de fin invalide'); return; }
+  const e = { id: Date.now(), startTs: st, endTs: et, duration: et - st, ts_num: st, manual: true };
+  document.getElementById('sieste-start').value = '';
+  document.getElementById('sieste-end').value = '';
+  await fbSet('siestes', e);
+  showToast('😴 Sieste ajoutée');
+};
+
+window.deleteSieste = async function(id) { await fbDelete('siestes', id); };
+
+function renderSiestesHistory() {
+  const list = document.getElementById('history-siestes');
+  if (!list) return;
+  const t = DB.siestes.filter(s => new Date(s.startTs).toDateString() === todayStr());
+
+  const totalEl = document.getElementById('siestes-total-today');
+  if (totalEl) {
+    const totalMs = t.reduce((a, s) => a + (s.duration || 0), 0);
+    totalEl.textContent = t.length ? 'Total aujourd\'hui : ' + fmtD(totalMs) + ' (' + t.length + ' sieste' + (t.length > 1 ? 's' : '') + ')' : '';
+  }
+
+  if (!t.length) { list.innerHTML = '<div class="empty-state">Aucune sieste enregistrée aujourd\'hui</div>'; return; }
+  list.innerHTML = t.map(s => `<div class="history-item"><div class="hi-dot" style="background:#A78BCA"></div><div class="hi-body"><div class="hi-times">${fmtT(s.startTs)} → ${fmtT(s.endTs)}</div><div class="hi-meta">Sieste</div></div><div class="hi-duration">${fmtD(s.duration)}</div><button class="hi-delete" onclick="deleteSieste(${s.id})">✕</button></div>`).join('');
+}
+
+// ── MALADE ────────────────────────────────────────────────
+let historyRange = { vomis:3, temperatures:3, selles:3, bilans:3 };
+
+function historyCutoff(days) { return dayKeyDate(-(days-1)).getTime(); }
+
+function updateHistoryBtnLabel(key) {
+  const btn = document.getElementById('btn-more-'+key);
+  if (btn) btn.textContent = historyRange[key]===3 ? 'Afficher plus (7 jours)' : 'Afficher moins (3 jours)';
+}
+
+window.toggleHistoryRange = function(key) {
+  historyRange[key] = historyRange[key]===3 ? 7 : 3;
+  updateHistoryBtnLabel(key);
+  if (key==='vomis') renderVomisHistory();
+  if (key==='temperatures') renderTemperaturesHistory();
+  if (key==='selles') renderSellesHistory();
+  if (key==='bilans') renderBilansHistory();
+};
+
+window.deleteEntry = async function(coll, id) { await fbDelete(coll, id); };
+
+function dateLabelIfNotToday(ts) {
+  return new Date(ts).toDateString()===todayStr() ? '' : new Date(ts).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' · ';
+}
+
+// ── Vomissements ──
+window.addVomi = async function() {
+  const tv = document.getElementById('vomi-time').value;
+  const note = document.getElementById('vomi-note').value.trim();
+  if (!tv) { showToast('⚠ Choisissez une heure'); return; }
+  const ts = timeToTs(tv);
+  const e = { id: Date.now(), ts, ts_num: ts };
+  if (note) e.note = note;
+  document.getElementById('vomi-note').value = '';
+  await fbSet('vomis', e);
+  showToast('✓ Renvoi enregistré');
+};
+
+function renderVomisHistory() {
+  const list = document.getElementById('history-vomis');
+  if (!list) return;
+  const cutoff = historyCutoff(historyRange.vomis);
+  const items = DB.vomis.filter(v => v.ts >= cutoff).sort((a,b)=>b.ts-a.ts);
+  if (!items.length) { list.innerHTML = '<div class="empty-state">Aucun renvoi enregistré</div>'; return; }
+  list.innerHTML = items.map(v => `<div class="history-item"><div class="hi-dot" style="background:#C8864A"></div><div class="hi-body"><div class="hi-times">${dateLabelIfNotToday(v.ts)}${fmtT(v.ts)}</div>${v.note?`<div class="hi-meta">${v.note}</div>`:''}</div><button class="hi-delete" onclick="deleteEntry('vomis',${v.id})">✕</button></div>`).join('');
+}
+
+// ── Température ──
+window.addTemperature = async function() {
+  const val = parseFloat(document.getElementById('temp-val').value);
+  const tv = document.getElementById('temp-time').value;
+  if (!val || !tv || val<30 || val>43) { showToast('⚠ Valeur ou heure invalide'); return; }
+  const ts = timeToTs(tv);
+  const e = { id: Date.now(), value: val, ts, ts_num: ts };
+  document.getElementById('temp-val').value = '';
+  await fbSet('temperatures', e);
+  showToast('🌡️ Température enregistrée');
+};
+
+function renderTemperaturesHistory() {
+  const list = document.getElementById('history-temperatures');
+  if (!list) return;
+  const cutoff = historyCutoff(historyRange.temperatures);
+  const items = DB.temperatures.filter(v => v.ts >= cutoff).sort((a,b)=>b.ts-a.ts);
+  if (!items.length) { list.innerHTML = '<div class="empty-state">Aucune température enregistrée</div>'; return; }
+  list.innerHTML = items.map(v => {
+    const fever = v.value >= 38;
+    return `<div class="history-item"><div class="hi-dot" style="background:${fever?'#E24B4A':'#5DCAA5'}"></div><div class="hi-body"><div class="hi-times">${dateLabelIfNotToday(v.ts)}${fmtT(v.ts)}</div></div><div class="hi-duration" style="${fever?'color:#E24B4A;font-weight:700':''}">${v.value.toFixed(1).replace('.',',')} °C</div><button class="hi-delete" onclick="deleteEntry('temperatures',${v.id})">✕</button></div>`;
+  }).join('');
+}
+
+// ── Selles anormales (stockées dans la collection couches, avec abnormal:true) ──
+const SELLE_TYPES = { molle:'Molle', liquide:'Liquide / Diarrhée', dure:'Dure / Constipation', sang:'Avec sang / mucus', autre:'Autre couleur' };
+
+function coucheTs(s) {
+  if (typeof s.ts === 'number') return s.ts;
+  if (s.ts && typeof s.ts.toMillis === 'function') return s.ts.toMillis();
+  if (s.ts && typeof s.ts.getTime === 'function') return s.ts.getTime();
+  return Date.now();
+}
+
+window.addSelle = async function() {
+  const type = document.getElementById('selle-type').value;
+  const tv = document.getElementById('selle-time').value;
+  const note = document.getElementById('selle-note').value.trim();
+  if (!tv) { showToast('⚠ Choisissez une heure'); return; }
+  const ts = timeToTs(tv);
+  const e = { id: Date.now(), type: 'caca', ts, ts_num: ts, abnormal: true, selleType: type };
+  if (note) e.note = note;
+  document.getElementById('selle-note').value = '';
+  await fbSet('couches', e);
+  showToast('✓ Selle enregistrée');
+};
+
+function renderSellesHistory() {
+  const list = document.getElementById('history-selles');
+  if (!list) return;
+  const cutoff = historyCutoff(historyRange.selles);
+  const items = DB.couches.filter(v => v.abnormal && coucheTs(v) >= cutoff).sort((a,b)=>coucheTs(b)-coucheTs(a));
+  if (!items.length) { list.innerHTML = '<div class="empty-state">Aucune selle anormale enregistrée</div>'; return; }
+  list.innerHTML = items.map(v => {
+    const ts = coucheTs(v);
+    return `<div class="history-item"><div class="hi-dot" style="background:#C8864A"></div><div class="hi-body"><div class="hi-times">${dateLabelIfNotToday(ts)}${fmtT(ts)}</div><div class="hi-meta">${SELLE_TYPES[v.selleType]||v.selleType}${v.note?' · '+v.note:''}</div></div><button class="hi-delete" onclick="deleteCouche(${v.id})">✕</button></div>`;
+  }).join('');
+}
+
+// ── Bilan du jour (questionnaire) ──
+const BILAN_LABELS = {
+  humeur:      { forme:'En forme', calme:'Calme', grognon:'Grognon', agite:'Très agité', lethargique:'Léthargique' },
+  eveil:       { normal:'Éveil normal', fatigue:'Un peu fatigué', distant:'Éveillé mais distant', somnolent:'Très somnolent' },
+  pleurs:      { habituels:'Pleurs habituels', plus:'Plus de pleurs', inconsolable:'Inconsolable', aucun:'Pas de pleurs' },
+  appetit:     { normal:'Appétit normal', diminue:'Appétit diminué', refus:'Refus de manger', augmente:'Appétit augmenté' },
+  repas:       { serein:'Repas serein', tord:'Se tord de douleur', enerve:"S'énerve", refuse_apres:'Refuse après qq gorgées' },
+  douleur:     { non:'Pas de douleur', ventre:'Douleur au ventre', dents:'Douleur aux dents', autre:'Douleur (autre)' },
+  peau:        { normale:'Peau normale', boutons:'Boutons/Plaques', fesses:'Fesses très rouges', seche:'Peau très sèche' },
+  respiration: { ras:'Respiration RAS', nez:'Nez bouché/qui coule', toux:'Toux', rapide:'Respiration rapide/sifflante' },
+  traitement:  { non:'Aucun traitement', doliprane:'Doliprane donné', vitamines:'Vitamines données', autre:'Autre traitement' }
+};
+
+let bilanAnswers = { humeur:null, eveil:null, pleurs:null, appetit:null, repas:null, douleur:null, peau:null, respiration:null, traitement:null, commentaire:'' };
+
+window.selectBilanOption = function(el, group, value) {
+  document.querySelectorAll('.pill[data-group="'+group+'"]').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  bilanAnswers[group] = value;
+};
+
+function loadBilanIntoForm(entry) {
+  Object.keys(BILAN_LABELS).forEach(group => {
+    const val = entry ? entry[group] : null;
+    bilanAnswers[group] = val || null;
+    document.querySelectorAll('.pill[data-group="'+group+'"]').forEach(p => p.classList.remove('selected'));
+    if (val) {
+      const target = Array.from(document.querySelectorAll('.pill[data-group="'+group+'"]')).find(p => p.getAttribute('onclick').includes("'"+val+"'"));
+      if (target) target.classList.add('selected');
+    }
+  });
+  bilanAnswers.commentaire = entry && entry.commentaire ? entry.commentaire : '';
+  document.getElementById('bilan-commentaire').value = bilanAnswers.commentaire;
+}
+
+window.openBilanForm = function() {
+  const dk = dayKeyDate(0);
+  const entry = DB.bilans.find(b => b.date === isoDate(dk));
+  loadBilanIntoForm(entry);
+  document.getElementById('bilan-summary-zone').style.display = 'none';
+  document.getElementById('bilan-form-zone').style.display = 'flex';
+};
+
+window.saveBilan = async function() {
+  if (!bilanAnswers.humeur) { showToast("⚠ Sélectionnez au moins l'humeur du jour"); return; }
+  bilanAnswers.commentaire = document.getElementById('bilan-commentaire').value.trim();
+  const dk = dayKeyDate(0);
+  const key = isoDate(dk);
+  const entry = { id: key, date: key, ts_num: dk.getTime(), ...bilanAnswers };
+  await fbSet('bilans', entry);
+  showToast('✓ Bilan enregistré');
+};
+
+function renderBilanToday() {
+  const summaryZone = document.getElementById('bilan-summary-zone');
+  const formZone = document.getElementById('bilan-form-zone');
+  if (!summaryZone || !formZone) return;
+  const dk = dayKeyDate(0);
+  const entry = DB.bilans.find(b => b.date === isoDate(dk));
+  if (entry) {
+    summaryZone.style.display = 'block';
+    formZone.style.display = 'none';
+    const parts = [];
+    if (entry.humeur) parts.push(BILAN_LABELS.humeur[entry.humeur]);
+    if (entry.douleur && entry.douleur !== 'non') parts.push(BILAN_LABELS.douleur[entry.douleur]);
+    if (entry.respiration && entry.respiration !== 'ras') parts.push(BILAN_LABELS.respiration[entry.respiration]);
+    document.getElementById('bilan-summary-text').textContent = '✓ Bilan du jour rempli — ' + (parts.join(' · ') || 'RAS') + (entry.commentaire ? ' — "'+entry.commentaire+'"' : '');
+  } else {
+    summaryZone.style.display = 'none';
+    formZone.style.display = 'flex';
+    loadBilanIntoForm(null);
+  }
+}
+
+function renderBilansHistory() {
+  const list = document.getElementById('history-bilans');
+  if (!list) return;
+  const cutoff = historyCutoff(historyRange.bilans);
+  const dk = dayKeyDate(0);
+  const items = DB.bilans.filter(b => b.ts_num >= cutoff && b.date !== isoDate(dk)).sort((a,b)=>b.ts_num-a.ts_num);
+  if (!items.length) { list.innerHTML = '<div class="empty-state">Aucun bilan précédent</div>'; return; }
+  list.innerHTML = items.map(b => {
+    const parts = [];
+    if (b.humeur) parts.push(BILAN_LABELS.humeur[b.humeur]);
+    if (b.douleur && b.douleur !== 'non') parts.push(BILAN_LABELS.douleur[b.douleur]);
+    if (b.respiration && b.respiration !== 'ras') parts.push(BILAN_LABELS.respiration[b.respiration]);
+    const dateStr = new Date(b.ts_num).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    return `<div class="history-item"><div class="hi-dot" style="background:#A78BCA"></div><div class="hi-body"><div class="hi-times">${dateStr}</div><div class="hi-meta">${parts.join(' · ')||'RAS'}${b.commentaire?' · "'+b.commentaire+'"':''}</div></div></div>`;
+  }).join('');
+}
+
+// ── DIAGRAMMES ────────────────────────────────────────────
+let currentPeriod=7;
+const W=360,H=120,PL=32,PR=10,PT=10,PB=24,CW=W-PL-PR,CH=H-PT-PB;
+window.setPeriod=function(days,btn){ currentPeriod=days; document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderDiagrammes(); };
+function sX(i,n){ return PL+(i/Math.max(n-1,1))*CW; }
+function sY(v,mn,mx){ if(mx===mn)return PT+CH/2; return PT+CH-((v-mn)/(mx-mn))*CH; }
+function pline(pts,c,w=2){ if(pts.length<2)return ''; return `<path d="${pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`; }
+function aarea(pts,c){ if(pts.length<2)return ''; const l=pts[pts.length-1],f=pts[0]; return `<path d="${pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')} L${l[0].toFixed(1)},${(PT+CH).toFixed(1)} L${f[0].toFixed(1)},${(PT+CH).toFixed(1)} Z" fill="${c}" opacity="0.15"/>`; }
+function ddots(pts,c,r=3){ return pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${r}" fill="${c}"/>`).join(''); }
+function xlbls(days){ const n=days.length,step=n<=8?1:Math.ceil(n/7); return days.map((d,i)=>{ if(i%step!==0&&i!==n-1)return ''; return `<text x="${sX(i,n).toFixed(1)}" y="${(H-4).toFixed(1)}" text-anchor="middle" font-size="9" fill="#B4B2A9">${d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'}).replace('.','')}</text>`; }).join(''); }
+function ylbls(mn,mx,steps=3){ let o=''; for(let i=0;i<=steps;i++){ const v=mn+(mx-mn)*(i/steps),y=sY(v,mn,mx); o+=`<text x="${(PL-4).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#B4B2A9">${Math.round(v)}</text><line x1="${PL}" y1="${y.toFixed(1)}" x2="${(W-PR).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#F0EDE8" stroke-width="1"/>`; } return o; }
+function svgW(inner){ return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`; }
+
+// Étiquettes d'axe Y au format horaire (ex: "7h30"), pour un domaine [mn,mx] en minutes depuis minuit
+function ylblsTime(mn,mx,steps=3){
+  let o='';
+  for(let i=0;i<=steps;i++){
+    const v=mn+(mx-mn)*(i/steps), y=sY(v,mn,mx);
+    const vv=((v%1440)+1440)%1440;
+    const hh=Math.floor(vv/60), mm=Math.round(vv%60);
+    o+=`<text x="${(PL-4).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#B4B2A9">${hh}h${mm>0?pad(mm):''}</text><line x1="${PL}" y1="${y.toFixed(1)}" x2="${(W-PR).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#F0EDE8" stroke-width="1"/>`;
+  }
+  return o;
+}
+// Étiquettes d'axe Y fixes toutes les 6h (0h/6h/12h/18h/24h), pour le graphique des siestes (domaine 0-1440 fixe)
+function ylblsHours(){
+  let o='';
+  [0,6,12,18,24].forEach(h=>{
+    const v=h*60, y=sY(v,0,1440);
+    o+=`<text x="${(PL-4).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#B4B2A9">${h}h</text><line x1="${PL}" y1="${y.toFixed(1)}" x2="${(W-PR).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#F0EDE8" stroke-width="1"/>`;
+  });
+  return o;
+}
+
+function getDays(period){ const days=[],n=period===0?Math.max(35,DB.tetees.length>0?Math.ceil((Date.now()-Math.min(...DB.tetees.map(s=>s.ts_num||s.startTs||s.ts)))/86400000)+2:35):period; for(let i=n;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d); } return days; }
+
+function renderDiagrammes() {
+  const days=getDays(currentPeriod);
+  // Tétées - UNIQUEMENT les vraies données
+  const tv=days.map(d=>{ 
+    const dk=d.toDateString(); 
+    const real=DB.tetees.filter(s=>s.type==='tetee'&&new Date(s.startTs).toDateString()===dk); 
+    if(real.length>0){ 
+      const nb=real.length; 
+      const dur=real.reduce((a,s)=>a+(s.duration||((s.durationG||0)+(s.durationD||0))),0)/real.length/60000; 
+      return {nb,duree:Math.round(dur)}; 
+    } 
+    return {nb:0,duree:0}; // Pas de données fictives
+  });
+  const nbs=tv.map(v=>v.nb),durs=tv.map(v=>v.duree),maxNb=Math.max(...nbs,1),maxDu=Math.max(...durs,1);
+  const pN=days.map((d,i)=>[sX(i,days.length),sY(nbs[i],0,maxNb)]),pD=days.map((d,i)=>[sX(i,days.length),sY(durs[i],0,maxDu)]);
+  document.getElementById('chart-tetees').innerHTML=svgW(ylbls(0,maxNb)+aarea(pN,'#EF9F27')+pline(pN,'#EF9F27')+aarea(pD,'#F4D190')+pline(pD,'#F4D190',1.5)+ddots(pN,'#EF9F27')+xlbls(days));
+  const avgNb=(nbs.reduce((a,b)=>a+b,0)/nbs.length).toFixed(1),avgDu=(durs.reduce((a,b)=>a+b,0)/durs.length).toFixed(0);
+  document.getElementById('stats-tetees').innerHTML=`<div class="stat-pill"><strong>${avgNb}</strong>tétées/j</div><div class="stat-pill"><strong>${avgDu} min</strong>durée moy.</div><div class="stat-pill"><strong>${Math.max(...nbs)}</strong>max/jour</div>`;
+  
+  // Couches - UNIQUEMENT les vraies données
+  const cv=days.map(d=>{ 
+    const dk=d.toDateString(); 
+    const real=DB.couches.filter(s=>{
+      const ts = typeof s.ts === 'number' ? s.ts : (s.ts && s.ts.toMillis ? s.ts.toMillis() : Date.now());
+      return new Date(ts).toDateString()===dk;
+    }); 
+    if(real.length>0) return {pipi:real.filter(s=>s.type==='pipi'||s.type==='both').length,caca:real.filter(s=>s.type==='caca'||s.type==='both').length}; 
+    return {pipi:0,caca:0}; // Pas de données fictives
+  });
+  const pp=cv.map(v=>v.pipi),cc=cv.map(v=>v.caca),maxV=Math.max(...pp,...cc,1);
+  const pP=days.map((d,i)=>[sX(i,days.length),sY(pp[i],0,maxV)]),pC=days.map((d,i)=>[sX(i,days.length),sY(cc[i],0,maxV)]);
+  document.getElementById('chart-couches').innerHTML=svgW(ylbls(0,maxV)+aarea(pP,'#F5CB5C')+pline(pP,'#F5CB5C')+aarea(pC,'#C8864A')+pline(pC,'#C8864A')+ddots(pP,'#F5CB5C')+ddots(pC,'#C8864A')+xlbls(days));
+  const avgP=(pp.reduce((a,b)=>a+b,0)/pp.length).toFixed(1),avgC=(cc.reduce((a,b)=>a+b,0)/cc.length).toFixed(1);
+  document.getElementById('stats-couches').innerHTML=`<div class="stat-pill"><strong>${avgP}</strong>pipi/j</div><div class="stat-pill"><strong>${avgC}</strong>caca/j</div>`;
+  renderPoidsChart();
+  renderRoutineDiagrams(days);
+}
+
+function renderRoutineDiagrams(days) {
+  days = days || getDays(currentPeriod);
+
+  // ── Heure de lévée ──
+  const leveVals = days.map(d => { const r = getRoutineEntry(d); if (r && r.leve) { const dt = new Date(r.leve); return dt.getHours() * 60 + dt.getMinutes(); } return null; });
+  const leveDefined = leveVals.filter(v => v != null);
+  if (leveDefined.length >= 2) {
+    const minL = Math.min(...leveDefined) - 20, maxL = Math.max(...leveDefined) + 20;
+    const pL = [];
+    days.forEach((d, i) => { if (leveVals[i] != null) pL.push([sX(i, days.length), sY(leveVals[i], minL, maxL)]); });
+    document.getElementById('chart-leve').innerHTML = svgW(ylblsTime(minL, maxL) + aarea(pL, '#F5CB5C') + pline(pL, '#F5CB5C') + ddots(pL, '#F5CB5C') + xlbls(days));
+    const avgL = leveDefined.reduce((a, b) => a + b, 0) / leveDefined.length;
+    document.getElementById('stats-leve').innerHTML = `<div class="stat-pill"><strong>${Math.floor(avgL / 60)}h${pad(Math.round(avgL % 60))}</strong>moy.</div>`;
+  } else {
+    document.getElementById('chart-leve').innerHTML = '<div class="empty-chart">Pas assez de données (ajoutez l\'heure de lévée dans Routine)</div>';
+    document.getElementById('stats-leve').innerHTML = '';
+  }
+
+  // ── Heure de coucher ──
+  const coucheVals = days.map(d => { const r = getRoutineEntry(d); if (r && r.couche) { const dt = new Date(r.couche); return dt.getHours() * 60 + dt.getMinutes(); } return null; });
+  const coucheDefined = coucheVals.filter(v => v != null);
+  if (coucheDefined.length >= 2) {
+    const minC = Math.min(...coucheDefined) - 20, maxC = Math.max(...coucheDefined) + 20;
+    const pC = [];
+    days.forEach((d, i) => { if (coucheVals[i] != null) pC.push([sX(i, days.length), sY(coucheVals[i], minC, maxC)]); });
+    document.getElementById('chart-couche').innerHTML = svgW(ylblsTime(minC, maxC) + aarea(pC, '#74C2E1') + pline(pC, '#74C2E1') + ddots(pC, '#74C2E1') + xlbls(days));
+    const avgC = coucheDefined.reduce((a, b) => a + b, 0) / coucheDefined.length;
+    document.getElementById('stats-couche').innerHTML = `<div class="stat-pill"><strong>${Math.floor(avgC / 60)}h${pad(Math.round(avgC % 60))}</strong>moy.</div>`;
+  } else {
+    document.getElementById('chart-couche').innerHTML = '<div class="empty-chart">Pas assez de données (ajoutez l\'heure de coucher dans Routine)</div>';
+    document.getElementById('stats-couche').innerHTML = '';
+  }
+
+  // ── Horaires des siestes dans la journée (un segment vertical par sieste, positionné à l'heure du jour) ──
+  let napSegs = '';
+  let totalNaps = 0, totalDur = 0;
+  days.forEach((d, i) => {
+    const dayKey = d.toDateString();
+    const naps = DB.siestes.filter(s => new Date(s.startTs).toDateString() === dayKey);
+    const x = sX(i, days.length);
+    naps.forEach(n => {
+      const sd = new Date(n.startTs), ed = new Date(n.endTs);
+      const sMin = sd.getHours() * 60 + sd.getMinutes();
+      const eMin = ed.getHours() * 60 + ed.getMinutes();
+      const y1 = sY(sMin, 0, 1440), y2 = sY(eMin, 0, 1440);
+      napSegs += `<line x1="${x.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#A78BCA" stroke-width="5" stroke-linecap="round"/>`;
+      totalNaps++; totalDur += (n.endTs - n.startTs);
+    });
+  });
+  document.getElementById('chart-siestes').innerHTML = svgW(ylblsHours() + napSegs + xlbls(days));
+  document.getElementById('stats-siestes').innerHTML = totalNaps
+    ? `<div class="stat-pill"><strong>${(totalDur / totalNaps / 60000).toFixed(0)} min</strong>durée moy.</div><div class="stat-pill"><strong>${(totalNaps / days.length).toFixed(1)}</strong>siestes/j</div>`
+    : '';
+}
+
+function renderPoidsChart() {
+  const sorted=[...DB.poids].sort((a,b)=>a.date.localeCompare(b.date));
+  if(sorted.length<2){ document.getElementById('chart-poids').innerHTML='<div class="empty-chart">Ajoutez au moins 2 pesées pour voir la courbe</div>'; document.getElementById('stats-poids').innerHTML=''; return; }
+  const gs=sorted.map(e=>e.g),n=sorted.length,minG=Math.min(...gs)-100,maxG=Math.max(...gs)+100;
+  const pts=sorted.map((e,i)=>[sX(i,n),sY(e.g,minG,maxG)]);
+  const lbs=sorted.map((e,i)=>{ if(i%Math.ceil(n/6)!==0&&i!==n-1)return ''; return `<text x="${sX(i,n).toFixed(1)}" y="${(H-4).toFixed(1)}" text-anchor="middle" font-size="9" fill="#B4B2A9">${new Date(e.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}).replace('.','')}</text>`; }).join('');
+  const vls=sorted.map((e,i)=>{ if(i!==0&&i!==n-1&&i!==Math.floor(n/2))return ''; return `<text x="${sX(i,n).toFixed(1)}" y="${(sY(e.g,minG,maxG)-6).toFixed(1)}" text-anchor="middle" font-size="9" fill="#5DCAA5" font-weight="600">${(e.g/1000).toFixed(2).replace('.',',')} kg</text>`; }).join('');
+  document.getElementById('chart-poids').innerHTML=svgW(ylbls(minG,maxG)+aarea(pts,'#5DCAA5')+pline(pts,'#5DCAA5',2.5)+ddots(pts,'#5DCAA5',3.5)+vls+lbs);
+  const gain=sorted[n-1].g-sorted[0].g,days=Math.round((new Date(sorted[n-1].date)-new Date(sorted[0].date))/86400000),ppd=days>0?Math.round(gain/days):0;
+  document.getElementById('stats-poids').innerHTML=`<div class="stat-pill"><strong>${(sorted[n-1].g/1000).toFixed(2).replace('.',',')} kg</strong>dernier</div><div class="stat-pill"><strong>${gain>0?'+':''}${gain} g</strong>gain total</div><div class="stat-pill"><strong>${ppd>0?'+':''}${ppd} g/j</strong>moy.</div>`;
+}
+
+window.addWeight = async function() {
+  const g=parseInt(document.getElementById('weight-val').value),date=document.getElementById('weight-date').value;
+  if(!g||!date||g<500||g>20000){ showToast('⚠️ Valeur invalide'); return; }
+  const id='poids_'+date;
+  document.getElementById('weight-val').value='';
+  await fbSet('poids',{id,date,g}); showToast('⚖️ Poids enregistré');
+};
+
+// ── ACCUEIL ───────────────────────────────────────────────
+function elapsedStr(ts){ const d=Math.floor((Date.now()-ts)/60000); if(d<60)return d+'min'; const h=Math.floor(d/60),m=d%60; return h+'h'+(m>0?pad(m):''); }
+
+function updateHome() {
+  const t=todayStr();
+  const lt=DB.tetees.find(s=>s.type==='tetee'&&new Date(s.startTs).toDateString()===t);
+  document.getElementById('home-last-tetee').textContent=lt?'il y a '+elapsedStr(lt.endTs):'—';
+  const lc=DB.couches.find(s=>{
+    const ts = typeof s.ts === 'number' ? s.ts : (s.ts && s.ts.toMillis ? s.ts.toMillis() : Date.now());
+    return new Date(ts).toDateString()===t;
+  });
+  const lcts = lc ? (typeof lc.ts === 'number' ? lc.ts : (lc.ts && lc.ts.toMillis ? lc.ts.toMillis() : Date.now())) : 0;
+  document.getElementById('home-last-couche').textContent=lc?'il y a '+elapsedStr(lcts):'—';
+  const lv=DB.soins.find(s=>{
+    const ts = typeof s.ts === 'number' ? s.ts : (s.ts && s.ts.toMillis ? s.ts.toMillis() : Date.now());
+    return s.key==='vitd'&&new Date(ts).toDateString()===t;
+  });
+  const lvts = lv ? (typeof lv.ts === 'number' ? lv.ts : (lv.ts && lv.ts.toMillis ? lv.ts.toMillis() : Date.now())) : 0;
+  document.getElementById('home-last-vitd').textContent=lv?fmtT(lvts):'—';
+  document.getElementById('home-count-tetee').textContent=DB.tetees.filter(s=>s.type==='tetee'&&new Date(s.startTs).toDateString()===t).length;
+  
+  // Carte Routine (accueil)
+  const rToday = getRoutineEntry(dayKeyDate(0));
+  const routineEl = document.getElementById('home-routine-status');
+  if (routineEl) routineEl.textContent = (rToday && rToday.leve) ? 'Levé à ' + fmtHeureFr(rToday.leve) : '—';
+
+  // Carte Malade (accueil)
+  const maladeEl = document.getElementById('home-malade-status');
+  if (maladeEl) {
+    const t = todayStr();
+    const feverToday = DB.temperatures.find(v => v.value >= 38 && new Date(v.ts).toDateString()===t);
+    const vomiToday = DB.vomis.some(v => new Date(v.ts).toDateString()===t);
+    const selleToday = DB.couches.some(v => v.abnormal && new Date(coucheTs(v)).toDateString()===t);
+    const bilanToday = DB.bilans.find(b => b.date === isoDate(dayKeyDate(0)));
+    if (feverToday) maladeEl.textContent = '🌡️ ' + feverToday.value.toFixed(1).replace('.',',') + '°C';
+    else if (vomiToday || selleToday) maladeEl.textContent = '⚠️ À surveiller';
+    else if (bilanToday) maladeEl.textContent = '✓ Bilan fait';
+    else maladeEl.textContent = '—';
+  }
+
+  // Mise à jour v2.0
+  updateHomeDisplayV2();
+}
+
+// ── RÉGLAGES ──────────────────────────────────────────────
+window.saveSettings = function() {
+  const name=document.getElementById('setting-name').value.trim()||'Charlie';
+  const birth=document.getElementById('setting-birth').value;
+  localStorage.setItem('charlie_settings',JSON.stringify({name,birth}));
+  localStorage.setItem('charlie_birth', birth); // Pour getBabyDevelopmentPhrase
+  updateBabyInfo();
+  
+  // Mettre à jour la phrase développement après sauvegarde (v2.0)
+  const devPhrase = getBabyDevelopmentPhrase(birth);
+  const devElement = document.getElementById('home-dev-phrase');
+  if (devElement) devElement.textContent = devPhrase;
+  
+  showToast('✓ Réglages sauvegardés');
+};
+
+function updateBabyInfo() {
+  try {
+    const s=JSON.parse(localStorage.getItem('charlie_settings')||'{}');
+    if(s.birth){ 
+      const days=Math.floor((Date.now()-new Date(s.birth).getTime())/86400000); 
+      const w=Math.floor(days/7),d=days%7; 
+      const ageEl = document.getElementById('baby-age');
+      if (ageEl) ageEl.textContent=w+' sem'+(d>0?' '+d+'j':'');
+    }
+    if(s.name){ 
+      const nameEl = document.getElementById('baby-name-display');
+      if (nameEl) nameEl.textContent=s.name;
+      const heroTitle = document.getElementById('hero-title');
+      if (heroTitle) heroTitle.textContent='Bonjour, '+s.name+' 🍼';
+    }
+    if(s.birth) {
+      const birthEl = document.getElementById('setting-birth');
+      if (birthEl) birthEl.value=s.birth;
+    }
+    if(s.name) {
+      const nameField = document.getElementById('setting-name');
+      if (nameField) nameField.value=s.name;
+    }
+  } catch(e){}
+}
+
+window.exportData = function() {
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='charlie_data_'+new Date().toISOString().split('T')[0]+'.json'; a.click();
+  showToast('⬇ Export téléchargé');
+};
+
+// ── INIT ──────────────────────────────────────────────────
+loadLocal();
+updateBabyInfo();
+updateHome();
+restoreChronoState(); // Restaurer l'état du chrono si une session était en cours
+document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+document.getElementById('weight-date').value=new Date().toISOString().split('T')[0];
+// Afficher la version dans Réglages
+document.getElementById('app-version').textContent = APP_VERSION;
+// Initialiser l'image de la couche (avec sécurité)
+const diaperDisplay = document.getElementById('diaper-display');
+if (diaperDisplay) {
+  diaperDisplay.src = COUCHE_IMGS.couche_nb;
+}
+
+// Initialiser RDV et info développement (v2.0)
+loadRdvSettings();
+updateRdvDisplay();
+updateHomeDisplayV2();
+const birthDate = localStorage.getItem('charlie_birth');
+const devPhrase = getBabyDevelopmentPhrase(birthDate);
+const devElement = document.getElementById('home-dev-phrase');
+if (devElement) devElement.textContent = devPhrase;
+
+// Initialiser Routine (v2.3)
+renderRoutineToday();
+renderYesterdayRoutine();
+renderSiestesHistory();
+renderYesterdayTetees();
+
+// Initialiser Malade (v2.4)
+renderVomisHistory();
+renderTemperaturesHistory();
+renderSellesHistory();
+renderBilanToday();
+renderBilansHistory();
+
+// Démarrer l'écoute Firebase
+listenCollection('tetees','tetees', ()=>{ renderTeteeHistory(); renderYesterdayTetees(); updateLastLabels_tetee(); updateHome(); });
+listenCollection('couches','couches', ()=>{ updateCoucheCounters(); updateLastLabels_couche(); renderCoucheHistory(); updateHome(); });
+listenCollection('soins','soins', ()=>{ updateLastLabels_soin(); renderSoinHistory(); updateHome(); });
+listenCollection('routine','routine', ()=>{ renderRoutineToday(); renderYesterdayRoutine(); updateHome(); });
+listenCollection('siestes','siestes', ()=>{ renderSiestesHistory(); renderYesterdayRoutine(); updateHome(); });
+listenCollection('vomis','vomis', ()=>{ renderVomisHistory(); updateHome(); });
+listenCollection('temperatures','temperatures', ()=>{ renderTemperaturesHistory(); updateHome(); });
+listenCollection('bilans','bilans', ()=>{ renderBilanToday(); renderBilansHistory(); updateHome(); });
+listenPoids();
+
+</script>
+</body>
+</html>
