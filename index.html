@@ -471,9 +471,131 @@ input[type="text"], input[type="time"], input[type="number"], input[type="date"]
   pointer-events: none; white-space: nowrap; z-index: 200;
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── ONBOARDING ── */
+body:not(.app-ready) .app-shell,
+body:not(.app-ready) .sync-banner { display: none; }
+
+.onboarding-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: #FFF9F5; overflow-y: auto;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px 16px 60px;
+}
+.onboarding-overlay.hidden { display: none; }
+.onboarding-card {
+  width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 16px;
+}
+.onboarding-step { display: none; flex-direction: column; gap: 14px; }
+.onboarding-step.active { display: flex; }
+.onboarding-title { font-size: 20px; font-weight: 700; color: #2C2C2A; }
+.onboarding-subtitle { font-size: 13px; color: #888780; line-height: 1.5; }
+.onboarding-box {
+  background: #fff; border: 1px solid #EDE9E3; border-radius: 16px; padding: 18px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.onboarding-tuto-list { display: flex; flex-direction: column; gap: 10px; }
+.onboarding-tuto-item { display: flex; gap: 10px; font-size: 13px; color: #444441; line-height: 1.5; }
+.onboarding-tuto-num {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: #FAEEDA;
+  color: #633806; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.onboarding-tuto-item a { color: #BA7517; }
+textarea#onboarding-config-input {
+  width: 100%; min-height: 110px; padding: 10px; border-radius: 8px; border: 1px solid #EDE9E3;
+  font-size: 12px; font-family: monospace; color: #2C2C2A; resize: vertical;
+}
+.onboarding-status { font-size: 12px; min-height: 16px; }
+.onboarding-status.error { color: #E24B4A; }
+.onboarding-status.ok { color: #2D5E1E; }
+.onboarding-mobile-notice { background: #FEF9E7; border: 1px solid #F5CB5C; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.onboarding-toggle-row { display: flex; gap: 8px; }
+.onboarding-toggle-btn {
+  flex: 1; padding: 10px; border-radius: 9px; border: 1px solid #EDE9E3; background: #fff;
+  font-size: 13px; font-weight: 600; color: #888780; cursor: pointer;
+}
+.onboarding-toggle-btn.active { background: #FAEEDA; border-color: #EF9F27; color: #633806; }
+#onboarding-qr-holder { display: flex; justify-content: center; padding: 16px; background: #fff; border-radius: 14px; }
+#onboarding-qr-holder img, #onboarding-qr-holder canvas { max-width: 220px; }
+#onboarding-scan-reader { width: 100%; max-width: 320px; margin: 0 auto; border-radius: 12px; overflow: hidden; }
+.onboarding-recap { font-size: 12px; color: #888780; background: #F5F4F2; border-radius: 10px; padding: 10px 12px; }
 </style>
 </head>
 <body>
+
+<!-- ═══════════════ ONBOARDING (première utilisation) ═══════════════ -->
+<div class="onboarding-overlay hidden" id="onboarding-overlay">
+  <div class="onboarding-card">
+
+    <!-- Étape A : recommandation ordinateur (mobile uniquement) -->
+    <div class="onboarding-step" id="ob-step-mobile-gate">
+      <div class="onboarding-title">👋 Avant de commencer</div>
+      <div class="onboarding-mobile-notice">
+        <div class="onboarding-subtitle" style="color:#7D6008">
+          La configuration se fait en copiant un bloc de texte technique depuis un autre site (Firebase). C'est <strong>beaucoup plus simple avec un clavier d'ordinateur</strong> qu'au doigt sur mobile.
+        </div>
+        <div class="onboarding-subtitle" style="color:#7D6008">Si possible, ouvrez ce lien sur un ordinateur, vous pourrez ensuite scanner un QR code avec ce téléphone.</div>
+      </div>
+      <button class="btn-save" onclick="window.obGoto('ob-step-config')">Continuer quand même sur ce téléphone</button>
+    </div>
+
+    <!-- Étape B : tuto + configuration -->
+    <div class="onboarding-step" id="ob-step-config">
+      <div class="onboarding-title">🔧 Connecter votre base de données</div>
+      <div class="onboarding-subtitle">Chaque famille possède sa propre base de données privée (Firebase), gratuite, sur laquelle personne d'autre n'a accès. Suivez ces étapes une seule fois.</div>
+
+      <div class="onboarding-box">
+        <div class="onboarding-tuto-list">
+          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">1</div>Allez sur <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> et connectez-vous avec un compte Google.</div>
+          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">2</div>Cliquez sur « Ajouter un projet », donnez-lui un nom (ex : votre prénom + Bébé), puis créez-le.</div>
+          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">3</div>Dans le menu de gauche, ouvrez « Firestore Database » → « Créer une base de données ». Choisissez une région en Europe et le mode Natif.</div>
+          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">4</div>Dans l'onglet « Règles », activez le mode test (accès ouvert 30 jours, à reconduire ensuite).</div>
+          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">5</div>Retournez sur ⚙️ « Paramètres du projet » → en bas, cliquez sur l'icône Web « &lt;/&gt; » pour enregistrer une application, donnez-lui un nom.</div>
+          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">6</div>Firebase affiche un bloc de code contenant <code>firebaseConfig = {"{"} ... {"}"}</code>. Copiez tout ce bloc entre accolades et collez-le ci-dessous.</div>
+        </div>
+
+        <textarea id="onboarding-config-input" placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "...", ... }'></textarea>
+        <div class="onboarding-status" id="onboarding-config-status"></div>
+        <button class="btn-save" onclick="window.obTestAndSaveConfig()">✓ Tester la connexion</button>
+      </div>
+
+      <div id="ob-scan-alt" style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn-secondary" style="width:100%" onclick="window.obToggleScanner()">📷 Ou scanner un QR code déjà généré</button>
+        <div id="onboarding-scan-reader" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Étape C : QR code à faire scanner (générée après validation, sur grand écran surtout) -->
+    <div class="onboarding-step" id="ob-step-qr">
+      <div class="onboarding-title">✓ Connexion réussie</div>
+      <div class="onboarding-subtitle">Scannez ce code avec le téléphone de chaque parent : il transmet à la fois la connexion à la base de données et le prénom/date de naissance du bébé, en une seule fois. Vous pourrez toujours retrouver la configuration Firebase dans la console Firebase (Paramètres du projet → Vos applications) si besoin.</div>
+      <div id="onboarding-qr-holder"></div>
+      <button class="btn-save" onclick="window.obContinueAfterQr()">Continuer sur cet appareil aussi</button>
+    </div>
+
+    <!-- Étape D : prénom local à ce téléphone -->
+    <div class="onboarding-step" id="ob-step-myname">
+      <div class="onboarding-title">Et vous, c'est qui ? 🙂</div>
+      <div class="onboarding-subtitle">Ce prénom reste sur cet appareil, pour personnaliser l'accueil (« Bonjour Camille 👋 »).</div>
+      <div class="onboarding-box">
+        <input type="text" id="ob-myname-input" placeholder="Votre prénom">
+        <button class="btn-save" onclick="window.obSaveMyName()">Continuer</button>
+      </div>
+    </div>
+
+    <!-- Étape E : infos bébé (seulement si personne ne les a encore saisies) -->
+    <div class="onboarding-step" id="ob-step-baby">
+      <div class="onboarding-title">👶 Parlez-nous de bébé</div>
+      <div class="onboarding-subtitle">Ces informations resteront sur cet appareil (jamais envoyées à Firestore) — un QR code vous permettra ensuite de les transmettre au téléphone de l'autre parent en un scan.</div>
+      <div class="onboarding-box">
+        <div class="form-group"><div class="form-label">Prénom</div><input type="text" id="ob-baby-name" placeholder="Charlie"></div>
+        <div class="form-group" style="margin-top:10px"><div class="form-label">Date de naissance</div><input type="date" id="ob-baby-birth"></div>
+        <button class="btn-save" style="margin-top:10px" onclick="window.obSaveBabyInfo()">✓ C'est parti</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- Bandeau sync -->
 <div class="sync-banner" id="sync-banner">
@@ -1126,6 +1248,7 @@ input[type="text"], input[type="time"], input[type="number"], input[type="date"]
           <div class="form-group" style="margin-top:10px"><div class="form-label">Prénom</div><input type="text" id="setting-name" placeholder="Charlie" value="Charlie"></div>
           <div class="form-group" style="margin-top:8px"><div class="form-label">Date de naissance</div><input type="date" id="setting-birth"></div>
           <button class="btn-save" style="margin-top:10px" onclick="saveSettings()">✓ Sauvegarder</button>
+          <div style="font-size:11px;color:#B4B2A9;margin-top:8px">Ces informations restent sur cet appareil (pas envoyées à Firestore). Si vous les modifiez ici, pensez à faire de même sur l'autre téléphone.</div>
         </div>
         <div class="chart-card">
           <div class="form-title">📅 Suivi Médical</div>
@@ -1156,29 +1279,37 @@ input[type="text"], input[type="time"], input[type="number"], input[type="date"]
 
 <div class="toast" id="toast"></div>
 
+<!-- Librairies QR (génération + lecture caméra), chargées avant le module principal -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, orderBy, Timestamp }
+import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, query, where, orderBy, Timestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ═══════════════════════════════════════════════════════════════
 // VERSION DE L'APP
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = '2.6';
+const APP_VERSION = '3.0';
 
-// ── CONFIG FIREBASE ────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyA8v3KSty91I19wLfrntSZmmN9EBFy3IYw",
-  authDomain: "charlie-app-373cf.firebaseapp.com",
-  projectId: "charlie-app-373cf",
-  storageBucket: "charlie-app-373cf.firebasestorage.app",
-  messagingSenderId: "360587933174",
-  appId: "1:360587933174:web:1f32e0db50885ab41183d7"
-};
+// ── CONFIG FIREBASE (dynamique, saisie une fois par famille lors du premier lancement) ──
+const FB_CONFIG_KEY = 'charlie_fb_config';
+let fbApp = null;
+let db = null;
 
-const fbApp = initializeApp(firebaseConfig);
-const db    = getFirestore(fbApp);
+function getSavedFbConfig() {
+  try {
+    const raw = localStorage.getItem(FB_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function startFirebase(config) {
+  fbApp = initializeApp(config);
+  db = getFirestore(fbApp);
+}
 
 // ── UTILITAIRES ────────────────────────────────────────────
 const pad  = x  => String(x).padStart(2,'0');
@@ -1211,6 +1342,44 @@ function showSync(state) {
 // ── BASE DE DONNÉES LOCALE (cache) ────────────────────────
 let DB = { tetees:[], couches:[], soins:[], poids:[], routine:[], siestes:[], vomis:[], temperatures:[], bilans:[] };
 
+// ── PRÉNOM & NAISSANCE DU BÉBÉ : stockés en local (localStorage), jamais sur Firestore ──
+// Transmis d'un appareil à l'autre uniquement via le QR code de l'onboarding.
+const BABY_KEY = 'charlie_baby';
+function getBabyLocal() {
+  try { const r = localStorage.getItem(BABY_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+}
+function setBabyLocal(obj) {
+  try { localStorage.setItem(BABY_KEY, JSON.stringify(obj)); } catch(e) {}
+}
+
+// ── RÉGLAGES PARTAGÉS (Firestore : collection "meta", document "settings") ──
+// Ne contient plus QUE le prochain RDV : le prénom/naissance du bébé restent locaux (voir ci-dessus).
+let SETTINGS = { rdvDate:'', rdvTitle:'' };
+const SETTINGS_DOC = () => doc(db, 'meta', 'settings');
+
+async function saveSettingsFields(fields) {
+  try {
+    showSync('syncing');
+    await setDoc(SETTINGS_DOC(), fields, { merge: true });
+    showSync('ok');
+  } catch(e) { showSync('error'); }
+}
+
+function listenSettings() {
+  onSnapshot(SETTINGS_DOC(), snap => {
+    if (snap.exists()) {
+      const data = snap.data();
+      SETTINGS = { rdvDate: data.rdvDate || '', rdvTitle: data.rdvTitle || '' };
+      // Migration douce : si une ancienne version (v3.0) avait écrit le prénom/naissance sur Firestore
+      // et qu'aucune copie locale n'existe encore sur cet appareil, on la récupère une seule fois.
+      if (!getBabyLocal() && data.name && data.birth) {
+        setBabyLocal({ name: data.name, birth: data.birth });
+      }
+      applySettingsToUI();
+    }
+  }, () => showSync('error'));
+}
+
 function saveLocal() {
   try { localStorage.setItem('charlie_cache', JSON.stringify(DB)); } catch(e){}
 }
@@ -1219,14 +1388,6 @@ function loadLocal() {
     const r=localStorage.getItem('charlie_cache'); 
     if(r) Object.assign(DB,JSON.parse(r)); 
   } catch(e){}
-  
-  // Initialiser la date de naissance si pas encore définie
-  const settings = JSON.parse(localStorage.getItem('charlie_settings') || '{}');
-  if (!settings.birth) {
-    settings.birth = '2026-04-23'; // 23 avril 2026
-    localStorage.setItem('charlie_settings', JSON.stringify(settings));
-    localStorage.setItem('charlie_birth', '2026-04-23');
-  }
 }
 
 // ── FIREBASE : ÉCRITURE ───────────────────────────────────
@@ -1275,7 +1436,12 @@ function listenPoids() {
 }
 
 // ── NAVIGATION ────────────────────────────────────────────
-const PAGE_TITLES = { home:'Bonjour 👋', tetees:'Tétées', couches:'Couches', soins:'Soins', routine:'Routine', malade:'Malade', diagrammes:'Diagrammes', reglages:'Réglages' };
+const MY_NAME_KEY = 'charlie_my_name';
+function getGreetingText() {
+  const myName = localStorage.getItem(MY_NAME_KEY);
+  return myName ? ('Bonjour ' + myName + ' 👋') : 'Bonjour 👋';
+}
+const PAGE_TITLES = { home:getGreetingText(), tetees:'Tétées', couches:'Couches', soins:'Soins', routine:'Routine', malade:'Malade', diagrammes:'Diagrammes', reglages:'Réglages' };
 
 window.navItem = function(page) { return document.querySelector(`[data-page="${page}"]`); };
 
@@ -1285,7 +1451,7 @@ window.navigate = function(page, el) {
   const target=document.getElementById('page-'+page);
   if(target) target.classList.add('active');
   if(el) el.classList.add('active');
-  document.getElementById('topbar-title').textContent=PAGE_TITLES[page]||page;
+  document.getElementById('topbar-title').textContent = page==='home' ? getGreetingText() : (PAGE_TITLES[page]||page);
   closeMenu();
   if(page==='home') updateHome();
   if(page==='tetees') { renderTeteeHistory(); renderYesterdayTetees(); }
@@ -1365,7 +1531,7 @@ const BABY_DEVELOPMENT_PHRASES = [
 ];
 
 function getBabyDevelopmentPhrase(birthDate) {
-  if (!birthDate) return "Enregistrez la date de naissance de Charlie dans les réglages pour voir les infos de développement.";
+  if (!birthDate) return "Enregistrez la date de naissance dans les réglages pour voir les infos de développement.";
   const today = new Date();
   const birth = new Date(birthDate);
   const diffMs = today - birth;
@@ -1378,15 +1544,13 @@ function getBabyDevelopmentPhrase(birthDate) {
 // ═══════════════════════════════════════════════════════════════
 // GESTION DU PROCHAIN RDV
 // ═══════════════════════════════════════════════════════════════
-window.saveRdvSettings = function() {
+window.saveRdvSettings = async function() {
   const rdvDate = document.getElementById('setting-rdv-date').value;
   const rdvTitle = document.getElementById('setting-rdv-title').value;
-  
+
   if (rdvDate && rdvTitle) {
-    localStorage.setItem('charlie_rdv_date', rdvDate);
-    localStorage.setItem('charlie_rdv_title', rdvTitle);
+    await saveSettingsFields({ rdvDate, rdvTitle });
     showToast('✓ RDV sauvegardé');
-    updateRdvDisplay();
   } else {
     showToast('⚠ Remplissez date et intitulé');
   }
@@ -1413,25 +1577,47 @@ function updateHomeDisplayV2() {
 }
 
 function updateRdvDisplay() {
-  const rdvDate = localStorage.getItem('charlie_rdv_date');
-  const rdvTitle = localStorage.getItem('charlie_rdv_title');
   const rdvElement = document.getElementById('home-next-rdv');
-  
-  if (rdvDate && rdvTitle) {
-    const d = new Date(rdvDate);
+  if (!rdvElement) return;
+  if (SETTINGS.rdvDate && SETTINGS.rdvTitle) {
+    const d = new Date(SETTINGS.rdvDate);
     const dateStr = d.toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'short'});
-    rdvElement.textContent = `${rdvTitle} - ${dateStr}`;
+    rdvElement.textContent = `${SETTINGS.rdvTitle} - ${dateStr}`;
   } else {
     rdvElement.textContent = 'Aucun RDV enregistré';
   }
 }
 
 function loadRdvSettings() {
-  const rdvDate = localStorage.getItem('charlie_rdv_date');
-  const rdvTitle = localStorage.getItem('charlie_rdv_title');
-  
-  if (rdvDate) document.getElementById('setting-rdv-date').value = rdvDate;
-  if (rdvTitle) document.getElementById('setting-rdv-title').value = rdvTitle;
+  const dateEl = document.getElementById('setting-rdv-date');
+  const titleEl = document.getElementById('setting-rdv-title');
+  if (dateEl && SETTINGS.rdvDate) dateEl.value = SETTINGS.rdvDate;
+  if (titleEl && SETTINGS.rdvTitle) titleEl.value = SETTINGS.rdvTitle;
+}
+
+// Applique le bébé (local) et le RDV (Firestore) à toute l'interface
+function applySettingsToUI() {
+  const baby = getBabyLocal() || {};
+
+  const ageEl = document.getElementById('baby-age');
+  if (ageEl && baby.birth) {
+    const days = Math.floor((Date.now() - new Date(baby.birth).getTime()) / 86400000);
+    const w = Math.floor(days / 7), d = days % 7;
+    ageEl.textContent = w + ' sem' + (d > 0 ? ' ' + d + 'j' : '');
+  }
+  const nameEl = document.getElementById('baby-name-display');
+  if (nameEl && baby.name) nameEl.textContent = baby.name;
+
+  const birthField = document.getElementById('setting-birth');
+  if (birthField && baby.birth) birthField.value = baby.birth;
+  const nameField = document.getElementById('setting-name');
+  if (nameField && baby.name) nameField.value = baby.name;
+
+  const devElement = document.getElementById('home-dev-phrase');
+  if (devElement) devElement.textContent = getBabyDevelopmentPhrase(baby.birth);
+
+  loadRdvSettings();
+  updateRdvDisplay();
 }
 
 const COUCHE_IMGS = {
@@ -2505,43 +2691,13 @@ function updateHome() {
 window.saveSettings = function() {
   const name=document.getElementById('setting-name').value.trim()||'Charlie';
   const birth=document.getElementById('setting-birth').value;
-  localStorage.setItem('charlie_settings',JSON.stringify({name,birth}));
-  localStorage.setItem('charlie_birth', birth); // Pour getBabyDevelopmentPhrase
-  updateBabyInfo();
-  
-  // Mettre à jour la phrase développement après sauvegarde (v2.0)
-  const devPhrase = getBabyDevelopmentPhrase(birth);
-  const devElement = document.getElementById('home-dev-phrase');
-  if (devElement) devElement.textContent = devPhrase;
-  
-  showToast('✓ Réglages sauvegardés');
+  setBabyLocal({ name, birth });
+  applySettingsToUI();
+  showToast('✓ Sauvegardé sur cet appareil');
 };
 
-function updateBabyInfo() {
-  try {
-    const s=JSON.parse(localStorage.getItem('charlie_settings')||'{}');
-    if(s.birth){ 
-      const days=Math.floor((Date.now()-new Date(s.birth).getTime())/86400000); 
-      const w=Math.floor(days/7),d=days%7; 
-      const ageEl = document.getElementById('baby-age');
-      if (ageEl) ageEl.textContent=w+' sem'+(d>0?' '+d+'j':'');
-    }
-    if(s.name){ 
-      const nameEl = document.getElementById('baby-name-display');
-      if (nameEl) nameEl.textContent=s.name;
-      const heroTitle = document.getElementById('hero-title');
-      if (heroTitle) heroTitle.textContent='Bonjour, '+s.name+' 🍼';
-    }
-    if(s.birth) {
-      const birthEl = document.getElementById('setting-birth');
-      if (birthEl) birthEl.value=s.birth;
-    }
-    if(s.name) {
-      const nameField = document.getElementById('setting-name');
-      if (nameField) nameField.value=s.name;
-    }
-  } catch(e){}
-}
+// Alias conservé pour compatibilité : les réglages sont désormais appliqués via applySettingsToUI()
+function updateBabyInfo() { applySettingsToUI(); }
 
 window.exportData = function() {
   const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
@@ -2551,52 +2707,217 @@ window.exportData = function() {
 };
 
 // ── INIT ──────────────────────────────────────────────────
-loadLocal();
-updateBabyInfo();
-updateHome();
-restoreChronoState(); // Restaurer l'état du chrono si une session était en cours
-document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
-document.getElementById('weight-date').value=new Date().toISOString().split('T')[0];
-// Afficher la version dans Réglages
-document.getElementById('app-version').textContent = APP_VERSION;
-// Initialiser l'image de la couche (avec sécurité)
-const diaperDisplay = document.getElementById('diaper-display');
-if (diaperDisplay) {
-  diaperDisplay.src = COUCHE_IMGS.couche_nb;
+
+// ═══ ONBOARDING : navigation entre étapes ═══
+window.obGoto = function(stepId) {
+  document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(stepId);
+  if (el) el.classList.add('active');
+};
+
+// ═══ ONBOARDING : lecture souple de la config collée (JSON strict ou objet JS Firebase) ═══
+function parseFirebaseConfigInput(raw) {
+  let text = raw.trim();
+  const braceStart = text.indexOf('{');
+  const braceEnd = text.lastIndexOf('}');
+  if (braceStart === -1 || braceEnd === -1) throw new Error('Aucune accolade trouvée');
+  text = text.slice(braceStart, braceEnd + 1);
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    const loose = text
+      .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":')
+      .replace(/'/g, '"')
+      .replace(/,(\s*})/g, '$1');
+    return JSON.parse(loose);
+  }
 }
 
-// Initialiser RDV et info développement (v2.0)
-loadRdvSettings();
-updateRdvDisplay();
-updateHomeDisplayV2();
-const birthDate = localStorage.getItem('charlie_birth');
-const devPhrase = getBabyDevelopmentPhrase(birthDate);
-const devElement = document.getElementById('home-dev-phrase');
-if (devElement) devElement.textContent = devPhrase;
+// ═══ ONBOARDING : teste une config en écrivant un document de vérification ═══
+async function tryConnectConfig(config) {
+  try {
+    const testApp = initializeApp(config, 'app-' + Date.now());
+    const testDb = getFirestore(testApp);
+    await setDoc(doc(testDb, '_health', 'ping'), { ts: Date.now() });
+    fbApp = testApp;
+    db = testDb;
+    return true;
+  } catch(e) { return false; }
+}
 
-// Initialiser Routine (v2.3)
-renderRoutineToday();
-renderYesterdayRoutine();
-renderSiestesHistory();
-renderYesterdayTetees();
+function showConfigQr(payload) {
+  const holder = document.getElementById('onboarding-qr-holder');
+  holder.innerHTML = '';
+  try { new QRCode(holder, { text: JSON.stringify(payload), width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); }
+  catch(e) { holder.textContent = 'QR indisponible — utilisez la config affichée dans la console Firebase pour l\'autre téléphone.'; }
+}
 
-// Initialiser Malade (v2.4)
-renderVomisHistory();
-renderTemperaturesHistory();
-renderSellesHistory();
-renderBilanToday();
-renderBilansHistory();
+// Construit le QR combiné (config Firebase + prénom/naissance du bébé) et affiche l'étape de partage
+function showCombinedQrAndContinue() {
+  const config = getSavedFbConfig();
+  const baby = getBabyLocal() || {};
+  showConfigQr({ fbConfig: config, babyName: baby.name, babyBirth: baby.birth });
+  window.obGoto('ob-step-qr');
+}
 
-// Démarrer l'écoute Firebase
-listenCollection('tetees','tetees', ()=>{ renderTeteeHistory(); renderYesterdayTetees(); updateLastLabels_tetee(); updateHome(); });
-listenCollection('couches','couches', ()=>{ updateCoucheCounters(); updateLastLabels_couche(); renderCoucheHistory(); updateHome(); });
-listenCollection('soins','soins', ()=>{ updateLastLabels_soin(); renderSoinHistory(); updateHome(); });
-listenCollection('routine','routine', ()=>{ renderRoutineToday(); renderYesterdayRoutine(); updateHome(); });
-listenCollection('siestes','siestes', ()=>{ renderSiestesHistory(); renderYesterdayRoutine(); updateHome(); });
-listenCollection('vomis','vomis', ()=>{ renderVomisHistory(); updateHome(); });
-listenCollection('temperatures','temperatures', ()=>{ renderTemperaturesHistory(); updateHome(); });
-listenCollection('bilans','bilans', ()=>{ renderBilanToday(); renderBilansHistory(); updateHome(); });
-listenPoids();
+// Point d'entrée commun après une config Firebase validée (saisie manuelle ou scan) :
+// vérifie si le prénom/naissance du bébé sont déjà connus sur CET appareil, sinon les demande.
+function afterConfigReady() {
+  const baby = getBabyLocal();
+  if (!baby || !baby.name || !baby.birth) {
+    window.obGoto('ob-step-baby');
+    return;
+  }
+  showCombinedQrAndContinue();
+}
+
+window.obTestAndSaveConfig = async function() {
+  const statusEl = document.getElementById('onboarding-config-status');
+  const raw = document.getElementById('onboarding-config-input').value;
+  statusEl.textContent = 'Vérification en cours…'; statusEl.className = 'onboarding-status';
+  let config;
+  try {
+    config = parseFirebaseConfigInput(raw);
+  } catch(e) {
+    statusEl.textContent = "⚠ Impossible de lire ce texte. Vérifiez que vous avez copié tout le bloc entre accolades.";
+    statusEl.className = 'onboarding-status error';
+    return;
+  }
+  const ok = await tryConnectConfig(config);
+  if (!ok) {
+    statusEl.textContent = '⚠ La connexion a échoué. Vérifiez la configuration et que Firestore Database est bien créé.';
+    statusEl.className = 'onboarding-status error';
+    return;
+  }
+  localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(config));
+  statusEl.textContent = '✓ Connexion réussie !';
+  statusEl.className = 'onboarding-status ok';
+  afterConfigReady();
+};
+
+window.obContinueAfterQr = async function() { await proceedAfterFirebase(); };
+
+// ═══ ONBOARDING : lecture de QR code via la caméra ═══
+// Le QR peut contenir soit { fbConfig, babyName, babyBirth } (généré par cette appli),
+// soit un firebaseConfig brut seul (compatibilité avec une saisie manuelle transmise autrement).
+let obScannerInstance = null;
+window.obToggleScanner = function() {
+  const reader = document.getElementById('onboarding-scan-reader');
+  const isHidden = reader.style.display === 'none' || !reader.style.display;
+  if (!isHidden) {
+    if (obScannerInstance) obScannerInstance.stop().catch(()=>{});
+    reader.style.display = 'none';
+    return;
+  }
+  reader.style.display = 'block';
+  obScannerInstance = new Html5Qrcode('onboarding-scan-reader');
+  obScannerInstance.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: 220 },
+    async (decodedText) => {
+      let payload;
+      try { payload = JSON.parse(decodedText); } catch(e) { return; }
+      await obScannerInstance.stop().catch(()=>{});
+      reader.style.display = 'none';
+      const config = payload.fbConfig || payload;
+      const ok = await tryConnectConfig(config);
+      if (!ok) { showToast('⚠ QR code invalide ou connexion impossible'); return; }
+      localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(config));
+      if (payload.fbConfig && payload.babyName && payload.babyBirth) {
+        setBabyLocal({ name: payload.babyName, birth: payload.babyBirth });
+      }
+      showToast('✓ Configuration récupérée');
+      afterConfigReady();
+    },
+    () => {}
+  ).catch(() => { showToast('⚠ Caméra indisponible'); reader.style.display = 'none'; });
+};
+
+// ═══ ONBOARDING : prénom local à cet appareil (jamais partagé) ═══
+window.obSaveMyName = async function() {
+  const val = document.getElementById('ob-myname-input').value.trim();
+  if (!val) { showToast('⚠ Entrez un prénom'); return; }
+  localStorage.setItem(MY_NAME_KEY, val);
+  await proceedAfterFirebase();
+};
+
+// ═══ ONBOARDING : infos bébé — stockées en local, jamais sur Firestore ═══
+window.obSaveBabyInfo = async function() {
+  const name = document.getElementById('ob-baby-name').value.trim();
+  const birth = document.getElementById('ob-baby-birth').value;
+  if (!name || !birth) { showToast('⚠ Prénom et date de naissance requis'); return; }
+  setBabyLocal({ name, birth });
+  showCombinedQrAndContinue();
+};
+
+// ═══ ORCHESTRATION GÉNÉRALE ═══
+function showOnboarding() { document.getElementById('onboarding-overlay').classList.remove('hidden'); }
+
+// Ne vérifie plus que le prénom du parent : le bébé est garanti connu avant d'arriver ici
+// (résolu par afterConfigReady() lors du tout premier réglage de cet appareil).
+async function proceedAfterFirebase() {
+  if (!localStorage.getItem(MY_NAME_KEY)) {
+    showOnboarding();
+    window.obGoto('ob-step-myname');
+    return;
+  }
+  finishOnboardingAndBoot();
+}
+
+function finishOnboardingAndBoot() {
+  document.getElementById('onboarding-overlay').classList.add('hidden');
+  document.body.classList.add('app-ready');
+  bootApp();
+}
+
+async function runOnboardingOrStart() {
+  const savedConfig = getSavedFbConfig();
+  if (!savedConfig) {
+    showOnboarding();
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    window.obGoto(isMobile ? 'ob-step-mobile-gate' : 'ob-step-config');
+    return;
+  }
+  startFirebase(savedConfig);
+  await proceedAfterFirebase();
+}
+
+// ═══ DÉMARRAGE RÉEL DE L'APPLICATION (une fois onboarding terminé) ═══
+function bootApp() {
+  loadLocal();
+  listenSettings();
+  applySettingsToUI();
+  updateHome();
+  restoreChronoState(); // Restaurer l'état du chrono si une session était en cours
+  document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+  document.getElementById('weight-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('app-version').textContent = APP_VERSION;
+  const diaperDisplay = document.getElementById('diaper-display');
+  if (diaperDisplay) diaperDisplay.src = COUCHE_IMGS.couche_nb;
+
+  renderRoutineToday();
+  renderYesterdayRoutine();
+  renderSiestesHistory();
+  renderYesterdayTetees();
+
+  renderVomisHistory();
+  renderTemperaturesHistory();
+  renderSellesHistory();
+  renderBilanToday();
+  renderBilansHistory();
+
+  listenCollection('tetees','tetees', ()=>{ renderTeteeHistory(); renderYesterdayTetees(); updateLastLabels_tetee(); updateHome(); });
+  listenCollection('couches','couches', ()=>{ updateCoucheCounters(); updateLastLabels_couche(); renderCoucheHistory(); updateHome(); });
+  listenCollection('soins','soins', ()=>{ updateLastLabels_soin(); renderSoinHistory(); updateHome(); });
+  listenCollection('routine','routine', ()=>{ renderRoutineToday(); renderYesterdayRoutine(); updateHome(); });
+  listenCollection('siestes','siestes', ()=>{ renderSiestesHistory(); renderYesterdayRoutine(); updateHome(); });
+  listenCollection('vomis','vomis', ()=>{ renderVomisHistory(); updateHome(); });
+  listenCollection('temperatures','temperatures', ()=>{ renderTemperaturesHistory(); updateHome(); });
+  listenCollection('bilans','bilans', ()=>{ renderBilanToday(); renderBilansHistory(); updateHome(); });
+  listenPoids();
+}
+
+runOnboardingOrStart();
 
 </script>
 </body>
