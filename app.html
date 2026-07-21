@@ -27,33 +27,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 
 /* ── LAYOUT ── */
 .app-shell { display: flex; min-height: 100vh; position: relative; }
-.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.22); z-index: 40; }
-.overlay.open { display: block; }
-
-/* ── SIDEBAR ── */
-.sidebar {
-  position: fixed; top: 0; left: 0; bottom: 0; width: 220px;
-  background: #fff; border-right: 1px solid #EDE9E3;
-  z-index: 50; transform: translateX(-100%);
-  transition: transform 0.26s cubic-bezier(.4,0,.2,1);
-  display: flex; flex-direction: column;
-}
-.sidebar.open { transform: translateX(0); }
-.sidebar-header { padding: 28px 18px 18px; border-bottom: 1px solid #EDE9E3; }
-.baby-row { display: flex; align-items: center; gap: 12px; }
-.baby-avatar { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #FAEEDA; flex-shrink: 0; }
-.baby-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.baby-name { font-size: 17px; font-weight: 700; color: #2C2C2A; }
-.baby-age  { font-size: 12px; color: #888780; margin-top: 2px; }
-.nav-list { list-style: none; padding: 12px 8px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.nav-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 10px; cursor: pointer;
-  font-size: 14px; color: #888780; transition: background 0.15s; user-select: none;
-}
-.nav-item:hover { background: #FFF4EE; }
-.nav-item.active { background: #FAEEDA; color: #633806; font-weight: 600; }
-.sidebar-footer { padding: 12px 8px; border-top: 1px solid #EDE9E3; }
 
 /* ── MAIN ── */
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -62,18 +35,48 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
   background: #FFF9F5; border-bottom: 1px solid #EDE9E3;
   position: sticky; top: 0; z-index: 10;
 }
-.menu-btn {
-  width: 38px; height: 38px; border-radius: 10px; border: 1px solid #EDE9E3;
-  background: #fff; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 18px; color: #888780; flex-shrink: 0;
-}
+.topbar-text { display: flex; flex-direction: column; gap: 1px; }
 .topbar-title { font-size: 15px; font-weight: 600; color: #2C2C2A; }
+.topbar-baby-info { font-size: 11px; color: #888780; }
+.baby-name { font-weight: 600; color: #633806; }
 .topbar-right { margin-left: auto; font-size: 12px; color: #888780; }
 
 /* ── PAGES ── */
 .page { display: none; }
 .page.active { display: block; }
-.module-content { padding: 16px; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.module-content { padding: 16px 16px 96px; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── BARRE DE NAVIGATION DU BAS ── */
+.bottom-nav-wrap {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #fff; border-top: 1px solid #EDE9E3; z-index: 40;
+}
+.bottom-nav-scroll {
+  display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  padding: 6px 4px; position: relative;
+}
+.bottom-nav-scroll::-webkit-scrollbar { display: none; }
+.nav-fade { position: absolute; top: 0; bottom: 0; width: 20px; pointer-events: none; z-index: 2; }
+.nav-fade.left { left: 0; background: linear-gradient(90deg, #fff, transparent); }
+.nav-fade.right { right: 0; background: linear-gradient(270deg, #fff, transparent); }
+.nav-item {
+  flex-shrink: 0; width: 68px; display: flex; flex-direction: column;
+  align-items: center; gap: 3px; padding: 6px 4px; cursor: pointer;
+  border-radius: 10px; transition: background 0.15s; user-select: none;
+}
+.nav-item:hover { background: #FFF4EE; }
+.nav-icon-img { width: 22px; height: 22px; object-fit: contain; opacity: 0.55; transition: opacity 0.15s; }
+.nav-label { font-size: 9.5px; font-weight: 500; color: #888780; text-align: center; line-height: 1.1; }
+.nav-item.active .nav-icon-img { opacity: 1; }
+.nav-item.active .nav-label { color: #633806; font-weight: 700; }
+
+/* ── EN CONSTRUCTION ── */
+.placeholder-card {
+  background: #fff; border: 1px dashed #C8C5BC; border-radius: 16px;
+  padding: 46px 20px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center;
+}
+.placeholder-emoji { font-size: 40px; }
+.placeholder-text { font-size: 13px; color: #888780; }
 
 /* ── ACCUEIL ── */
 .home-hero {
@@ -487,42 +490,17 @@ body:not(.app-ready) .sync-banner { display: none; }
 </div>
 
 <div class="app-shell">
-  <div class="overlay" id="overlay" onclick="closeMenu()"></div>
-
-  <!-- SIDEBAR -->
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="baby-row">
-        <div class="baby-avatar">
-          <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iQ2FscXVlXzIiIGRhdGEtbmFtZT0iQ2FscXVlIDIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDYxMiA2MTIiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6ICMxZDFkMWI7CiAgICAgIH0KCiAgICAgIC5jbHMtMiB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgICBzdHJva2U6ICMxZDFkMWI7CiAgICAgICAgc3Ryb2tlLW1pdGVybGltaXQ6IDEwOwogICAgICAgIHN0cm9rZS13aWR0aDogMTBweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTk5LjE3LDQ0MS4zMmMzNy40NSw2Ni4zNSwxMjYuMTEsODUuNCwxODUuNjMsMzcuMTcsMTguMzctMTQuNzksMzIuMjgtMzQuOTYsMzkuNS01Ny40LDAsMCwxLjE4LDQuOTgsMS4xOCw0Ljk4LTIwLjYzLTE5LjQyLTQ1Ljg5LTMzLjkyLTcyLjU5LTQzLjI1LTYuODUtMi4zNi0xNS41My00LjY1LTIyLjU0LTYuNDgtMjYuMDMtNi40OC01MS4yNi0xNy41NS03Mi42NC0zMy44NC0xNy4xNC0xMi45My0zMS43NC0yOC45Mi00My40MS00Ni42MiwxOS42OCwyNC42Niw0NC42Miw0NS4xMyw3My4zOSw1OC4xMywxMS43NCw1LjI3LDI0LjQxLDkuNiwzNi44NywxMi44LDcuMTksMS43MiwxNi4xOSwzLjUyLDIzLjI4LDUuNDYsMjAuOCw1Ljg2LDQwLjg3LDE0Ljc3LDU4Ljk1LDI2LjYzLDkuOTMsNi41OSwxOS41MSwxMy43NSwyNy44OSwyMi4zMSwwLDAtLjkxLDIuOS0uOTEsMi45LTIzLjk5LDc3LjE4LTExNS45NywxMTMuMzMtMTg1LjQ5LDcxLjY2LTIxLjQzLTEyLjczLTM4Ljc0LTMxLjg0LTQ5LjEtNTQuNDRoMFoiLz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xODMuNjYsMzk2LjIyYy0xNS4yLTI2LjIxLTI1LjIxLTYxLjMzLTIyLjMtOTEuNzMsMCwwLC42NC01LjQyLjY0LTUuNDIuMzktMi41OSwxLjU2LTUuMDIsMi45OS02Ljg2LDguODYtMTAuODgsMjguMTYtMTMuNTksNDEuMjQtMTUuMTIsNy0uNjgsMTQuMDItLjk2LDIxLjA0LS43NS0xLjY5LjUxLTMuMzguOTMtNS4wNiwxLjQyLTQuOSwxLjM0LTEwLjI0LDIuNzUtMTUuMDYsNC4xNS04LjY4LDIuNzEtMzMuNyw5LjA0LTM1LjU0LDE4LjUxLS4xMywxLjY2LS40Nyw1LjgxLS42NCw3LjQxLS4yMiw1LjcyLS4yMywxMS44My4xNSwxNy41MywxLjYsMjQuMDcsNi44Nyw0Ny4yNywxMi41NCw3MC44NWgwWiIvPgogIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE4NS44NiwyNzUuODhjLTE2LjM3LTEzLjc0LTI0LjAxLTM4LjE4LTE1LjI0LTU4LjMzLDkuMjEtMjAuMzIsMzEuNTUtMjguNTMsNDkuMTUtMzkuMzEsNS40NS0zLjQxLDEwLjc2LTcuMTksMTUuMTItMTEuOTIsMTEuMzctMTIuNDYsMTcuMzYtMjkuNjYsMjkuMDMtNDIuMzYsMjEuNzUtMjQuNjcsNTguMTYtMzYuNjMsODguNTEtMjAuODEsMTEuMDUsNS42MiwyMC41LDE0LjQzLDI2LjAxLDI1LjU2Ljc5LDEuNTQsMS4zOCwzLjE5LDIuMDYsNC43Ny0xLjI2LTIuMDYtMi43NC00LjU2LTQuMjQtNi40NS0yLTIuNjctNC4zOS01LjI1LTYuODEtNy41NC0xNS4yNC0xMy45My0zNy41NC0xOS43Ny01Ny41Ny0xNC42NS0xNC4yNiwzLjQtMjcuMiwxMS40NS0zNy4zNywyMS45My0xMy41MywxMy41MS0xOS4xMywzMi4yLTMyLjQ0LDQ2LjMxLTE1LjM4LDE2LjE5LTM3Ljk3LDIxLjE4LTU0LjksMzQuNjYtNC4yMywzLjU0LTguMDEsNy44NC0xMC42NywxMi42Ny05LjI4LDE3Ljg2LTMuNiw0MC43NSw5LjM1LDU1LjQ4aDBaIi8+CiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzk1LjU5LDE1MS42NWMxMy4zNywxMC44LDEzLjYxLDMxLDcuNTUsNDUuODYtMi45OCw3Ljc1LTcuMjEsMTQuNzktMTEuNTMsMjEuNDUtMy43Niw2LjAyLTguMjIsMTEuMjYtNy45OSwxOC4zMy44OCwxMC45MSwxMC43NywxOC4zNywxNi42NCwyNy4zMSwxMS42LDE2LjY4LDE2LjcxLDM4LjU0LDEyLjYyLDU4LjA2LTEuMjEtMTguNzYtNy4yMS0zNi4wNC0xOC4wMi01MC42LTcuODktMTAuNjktMjAuMzctMTkuNDktMjEuMjItMzQuMjQtLjU5LTEzLjQ5LDEwLjM3LTIzLjE2LDE2LjY5LTMzLjY4LDEwLjM4LTE1LjM3LDE3LTM2LjAxLDUuMjYtNTIuNDloMFoiLz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNDYuOCwyNDIuOTdjLTguMjEtOS4yNC00LjgxLTI0LjA2LDMuMzQtMzIuMjcsMTMuNTktMTMuOTQsMzQuNTQtMTguMDMsNTMuMTctMTkuNzMsMjEuODQtMS44Miw0My40Ny0uMzMsNjEuMjUtMTMuNjksNC45My0zLjY1LDkuMTQtOC41OSwxMS43Ny0xNC4xOS4zNC0uODQuNy0xLjY5LDEuMDctMi41NS0xLjA2LDE1LjY2LTE0Ljg4LDI3Ljc2LTI4Ljg5LDMzLjE5LTE0LjMsNS41Ni0yOS40Miw1Ljk1LTQ0LjM3LDcuMjEtMTguMjYsMS42My00NS43Miw1LjExLTU1Ljk5LDIxLjk5LTMuNDcsNS45MS00LjQ2LDEzLjY5LTEuMzUsMjAuMDVoMFoiLz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zNzUuMTcsMTc5LjA4YzMuNzMsMi45Niw0LjQ2LDguNDksMy4zNCwxMi45OC0xLjE1LDQuNTgtMy45OCw4LjU2LTYuNzEsMTIuMjEtNC4wNCw1LjM1LTYuOSw5LjM4LTYuOTMsMTUuNzcuNzgsMjMuNjctMTcuNTMsMzcuNzctMzYuMTgsNDguMjgsMCwwLTIuNzIsMS42LTIuNzIsMS42LDAsMC0yLjQ1LTEuNjgtMi40NS0xLjY4LTE2Ljc2LTExLjItMzUuNTQtMjYuMzEtMzYuODktNDguMS0uMTgtMi45OC4wNi01Ljk2Ljc0LTguNzkuMzMsNS43LDIuMDEsMTEuMTQsNC42NCwxNi4xMSw1LjE2LDkuOSwxMy40OCwxNy4yMiwyMi41NiwyMy41MSw0LjU3LDMuMTgsOS4zOCw2LjE1LDE0LjI1LDkuMjFsLTUuMTYtLjA4YzEzLjY1LTguNjYsMjguODgtMTguMTgsMzIuMy0zNC41MS43OC00LjMxLjgtOS4zMiwyLjgyLTEzLjcyLDEuMDktMi40MSwyLjUxLTQuNSw0LjA1LTYuMzIsNC4xMi01LDkuODMtOC45NCwxMi42LTE0LjU5LDEuNzktMy42NiwyLjE5LTguMzEtLjI3LTExLjloMFoiLz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMDEuMjIsMjU0LjM5Yy0xLjQ3LDkuNzEtMy4yMywyMS42MSw4LjQ3LDI1LjA2LDQuNzksMS41NywxMC43OCwyLjE3LDE1LjgyLDMuNTIsMjcuOTEsNy4xLDUyLjcyLDI5LjM0LDU5LjYyLDU3LjY5LTE1LjA1LTIyLjI5LTM2LjQ2LTQwLjM5LTYyLjIyLTQ4LjU5LTEuOTItLjYyLTUuODUtMS43Ny03LjgxLTIuMy0xOS43OS00Ljk4LTI0LjA5LTE4LjI5LTEzLjg4LTM1LjM5aDBaIi8+CiAgPHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMzcyLjA0LDM3Ni40NGMtMi4yMi0xLjgyLTEuMzItNS41Ny43MS03LjYxczQuODMtMy4xNSw2Ljg5LTUuMTRjMi45NS0yLjg1LDQuMDMtNy4xMyw2LjQ4LTEwLjQzLDMuMTEtNC4yLDguMTgtNi41LDEzLjI0LTcuOCwxMS4zNC0yLjkyLDI0LjAyLTEuNDYsMzMuNjksNS4xNCw5LjY3LDYuNiwxNS43OSwxOC42LDE0LjE3LDMwLjJzLTExLjYxLDIxLjg1LTIzLjMsMjIuNTkiLz4KPC9zdmc+" alt="Charlie">
-        </div>
-        <div>
-          <div class="baby-name" id="baby-name-display">Charlie</div>
-          <div class="baby-age"  id="baby-age">3 semaines</div>
-        </div>
-      </div>
-    </div>
-    <ul class="nav-list">
-      <li class="nav-item active" onclick="navigate('home',this)"        data-page="home">        🏠 Accueil</li>
-      <li class="nav-item"        onclick="navigate('tetees',this)"      data-page="tetees">      🤱 Tétées</li>
-      <li class="nav-item"        onclick="navigate('couches',this)"     data-page="couches">     🩹 Couches</li>
-      <li class="nav-item"        onclick="navigate('soins',this)"       data-page="soins">       💊 Soins</li>
-      <li class="nav-item"        onclick="navigate('routine',this)"     data-page="routine">     😴 Routine</li>
-      <li class="nav-item"        onclick="navigate('malade',this)"      data-page="malade">      🤒 Malade</li>
-      <li class="nav-item"        onclick="navigate('diagrammes',this)"  data-page="diagrammes">  📊 Diagrammes</li>
-    </ul>
-    <div class="sidebar-footer">
-      <div class="nav-item" onclick="navigate('reglages',this)" data-page="reglages">⚙️ Réglages</div>
-    </div>
-  </nav>
 
   <!-- MAIN -->
   <div class="main">
     <div class="topbar">
-      <div class="menu-btn" onclick="toggleMenu()">☰</div>
-      <div class="topbar-title" id="topbar-title">Bonjour 👋</div>
+      <div class="topbar-text">
+        <div class="topbar-title" id="topbar-title">Bonjour 👋</div>
+        <div class="topbar-baby-info"><span class="baby-name" id="baby-name-display">Charlie</span> · <span id="baby-age">3 semaines</span></div>
+      </div>
       <div class="topbar-right" id="topbar-date"></div>
     </div>
+
 
     <!-- ACCUEIL -->
     <div class="page active" id="page-home">
@@ -1123,6 +1101,26 @@ body:not(.app-ready) .sync-banner { display: none; }
       </div>
     </div>
 
+    <!-- ÉTAPES (en construction) -->
+    <div class="page" id="page-etapes">
+      <div class="module-content">
+        <div class="placeholder-card">
+          <div class="placeholder-emoji">🚧</div>
+          <div class="placeholder-text">Cette rubrique est en cours de construction.<br>Elle permettra bientôt de noter les grandes étapes de Charlie : premiers sourires, nouveaux mouvements, marche...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIVERSIFICATION (en construction) -->
+    <div class="page" id="page-diversification">
+      <div class="module-content">
+        <div class="placeholder-card">
+          <div class="placeholder-emoji">🚧</div>
+          <div class="placeholder-text">Cette rubrique est en cours de construction.<br>Elle permettra bientôt de suivre la diversification alimentaire de Charlie.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- RÉGLAGES -->
     <div class="page" id="page-reglages">
       <div class="module-content">
@@ -1153,6 +1151,54 @@ body:not(.app-ready) .sync-banner { display: none; }
             <div style="margin-top:6px">Version <strong id="app-version">2.6</strong></div>
             <div style="font-size:11px;margin-top:6px;opacity:0.8">Application de suivi de santé pour bébé</div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BARRE DE NAVIGATION DU BAS -->
+    <div class="bottom-nav-wrap">
+      <div class="nav-fade left"></div>
+      <div class="nav-fade right"></div>
+      <div class="bottom-nav-scroll">
+        <div class="nav-item active" onclick="navigate('home',this)" data-page="home">
+          <img src="./images/home.svg" class="nav-icon-img" alt="Accueil">
+          <div class="nav-label">Accueil</div>
+        </div>
+        <div class="nav-item" onclick="navigate('tetees',this)" data-page="tetees">
+          <img src="./images/down_allaitement.svg" class="nav-icon-img" alt="Tétées">
+          <div class="nav-label">Tétées</div>
+        </div>
+        <div class="nav-item" onclick="navigate('couches',this)" data-page="couches">
+          <img src="./images/down_couches.svg" class="nav-icon-img" alt="Couches">
+          <div class="nav-label">Couches</div>
+        </div>
+        <div class="nav-item" onclick="navigate('soins',this)" data-page="soins">
+          <img src="./images/down_soins.svg" class="nav-icon-img" alt="Soins">
+          <div class="nav-label">Soins</div>
+        </div>
+        <div class="nav-item" onclick="navigate('routine',this)" data-page="routine">
+          <img src="./images/down_rythme.svg" class="nav-icon-img" alt="Routine">
+          <div class="nav-label">Routine</div>
+        </div>
+        <div class="nav-item" onclick="navigate('malade',this)" data-page="malade">
+          <img src="./images/down_maladie.svg" class="nav-icon-img" alt="Malade">
+          <div class="nav-label">Malade</div>
+        </div>
+        <div class="nav-item" onclick="navigate('diagrammes',this)" data-page="diagrammes">
+          <img src="./images/down_diagrammes.svg" class="nav-icon-img" alt="Diagrammes">
+          <div class="nav-label">Diagrammes</div>
+        </div>
+        <div class="nav-item" onclick="navigate('etapes',this)" data-page="etapes">
+          <img src="./images/down_grandir.svg" class="nav-icon-img" alt="Étapes">
+          <div class="nav-label">Étapes</div>
+        </div>
+        <div class="nav-item" onclick="navigate('diversification',this)" data-page="diversification">
+          <img src="./images/down_diversification.svg" class="nav-icon-img" alt="Diversification">
+          <div class="nav-label">Diversif.</div>
+        </div>
+        <div class="nav-item" onclick="navigate('reglages',this)" data-page="reglages">
+          <img src="./images/down_reglages.svg" class="nav-icon-img" alt="Réglages">
+          <div class="nav-label">Réglages</div>
         </div>
       </div>
     </div>
@@ -1304,7 +1350,7 @@ function getGreetingText() {
   const myName = localStorage.getItem(MY_NAME_KEY);
   return myName ? ('Bonjour ' + myName + ' 👋') : 'Bonjour 👋';
 }
-const PAGE_TITLES = { home:getGreetingText(), tetees:'Tétées', couches:'Couches', soins:'Soins', routine:'Routine', malade:'Malade', diagrammes:'Diagrammes', reglages:'Réglages' };
+const PAGE_TITLES = { home:getGreetingText(), tetees:'Tétées', couches:'Couches', soins:'Soins', routine:'Routine', malade:'Malade', diagrammes:'Diagrammes', etapes:'Étapes', diversification:'Diversification', reglages:'Réglages' };
 
 window.navItem = function(page) { return document.querySelector(`[data-page="${page}"]`); };
 
@@ -1313,18 +1359,17 @@ window.navigate = function(page, el) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const target=document.getElementById('page-'+page);
   if(target) target.classList.add('active');
-  if(el) el.classList.add('active');
+  // On retrouve toujours l'onglet correspondant dans la barre du bas par data-page,
+  // que navigate() ait été déclenché depuis la barre elle-même ou depuis une tuile de l'accueil.
+  const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if(navEl) navEl.classList.add('active');
   document.getElementById('topbar-title').textContent = page==='home' ? getGreetingText() : (PAGE_TITLES[page]||page);
-  closeMenu();
   if(page==='home') updateHome();
   if(page==='tetees') { renderTeteeHistory(); renderYesterdayTetees(); }
   if(page==='routine') { renderRoutineToday(); renderYesterdayRoutine(); renderSiestesHistory(); }
   if(page==='malade') { renderVomisHistory(); renderTemperaturesHistory(); renderSellesHistory(); renderBilanToday(); renderBilansHistory(); }
   if(page==='diagrammes') renderDiagrammes();
 };
-
-window.toggleMenu = function() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); };
-window.closeMenu  = function() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); };
 
 // ── TÉTÉES ────────────────────────────────────────────────
 const CHS = {
