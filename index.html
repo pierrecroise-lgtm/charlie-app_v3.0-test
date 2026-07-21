@@ -472,130 +472,13 @@ input[type="text"], input[type="time"], input[type="number"], input[type="date"]
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
 
-/* ── ONBOARDING ── */
+/* ── Masquage le temps de vérifier si la config existe (voir script de démarrage) ── */
 body:not(.app-ready) .app-shell,
 body:not(.app-ready) .sync-banner { display: none; }
-
-.onboarding-overlay {
-  position: fixed; inset: 0; z-index: 500;
-  background: #FFF9F5; overflow-y: auto;
-  display: flex; align-items: flex-start; justify-content: center;
-  padding: 24px 16px 60px;
-}
-.onboarding-overlay.hidden { display: none; }
-.onboarding-card {
-  width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 16px;
-}
-.onboarding-step { display: none; flex-direction: column; gap: 14px; }
-.onboarding-step.active { display: flex; }
-.onboarding-title { font-size: 20px; font-weight: 700; color: #2C2C2A; }
-.onboarding-subtitle { font-size: 13px; color: #888780; line-height: 1.5; }
-.onboarding-box {
-  background: #fff; border: 1px solid #EDE9E3; border-radius: 16px; padding: 18px;
-  display: flex; flex-direction: column; gap: 12px;
-}
-.onboarding-tuto-list { display: flex; flex-direction: column; gap: 10px; }
-.onboarding-tuto-item { display: flex; gap: 10px; font-size: 13px; color: #444441; line-height: 1.5; }
-.onboarding-tuto-num {
-  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: #FAEEDA;
-  color: #633806; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
-}
-.onboarding-tuto-item a { color: #BA7517; }
-textarea#onboarding-config-input {
-  width: 100%; min-height: 110px; padding: 10px; border-radius: 8px; border: 1px solid #EDE9E3;
-  font-size: 12px; font-family: monospace; color: #2C2C2A; resize: vertical;
-}
-.onboarding-status { font-size: 12px; min-height: 16px; }
-.onboarding-status.error { color: #E24B4A; }
-.onboarding-status.ok { color: #2D5E1E; }
-.onboarding-mobile-notice { background: #FEF9E7; border: 1px solid #F5CB5C; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-.onboarding-toggle-row { display: flex; gap: 8px; }
-.onboarding-toggle-btn {
-  flex: 1; padding: 10px; border-radius: 9px; border: 1px solid #EDE9E3; background: #fff;
-  font-size: 13px; font-weight: 600; color: #888780; cursor: pointer;
-}
-.onboarding-toggle-btn.active { background: #FAEEDA; border-color: #EF9F27; color: #633806; }
-#onboarding-qr-holder { display: flex; justify-content: center; padding: 16px; background: #fff; border-radius: 14px; }
-#onboarding-qr-holder img, #onboarding-qr-holder canvas { max-width: 220px; }
-#onboarding-scan-reader { width: 100%; max-width: 320px; margin: 0 auto; border-radius: 12px; overflow: hidden; }
-.onboarding-recap { font-size: 12px; color: #888780; background: #F5F4F2; border-radius: 10px; padding: 10px 12px; }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════ ONBOARDING (première utilisation) ═══════════════ -->
-<div class="onboarding-overlay hidden" id="onboarding-overlay">
-  <div class="onboarding-card">
-
-    <!-- Étape A : recommandation ordinateur (mobile uniquement) -->
-    <div class="onboarding-step" id="ob-step-mobile-gate">
-      <div class="onboarding-title">👋 Avant de commencer</div>
-      <div class="onboarding-mobile-notice">
-        <div class="onboarding-subtitle" style="color:#7D6008">
-          La configuration se fait en copiant un bloc de texte technique depuis un autre site (Firebase). C'est <strong>beaucoup plus simple avec un clavier d'ordinateur</strong> qu'au doigt sur mobile.
-        </div>
-        <div class="onboarding-subtitle" style="color:#7D6008">Si possible, ouvrez ce lien sur un ordinateur, vous pourrez ensuite scanner un QR code avec ce téléphone.</div>
-      </div>
-      <button class="btn-save" onclick="window.obGoto('ob-step-config')">Continuer quand même sur ce téléphone</button>
-    </div>
-
-    <!-- Étape B : tuto + configuration -->
-    <div class="onboarding-step" id="ob-step-config">
-      <div class="onboarding-title">🔧 Connecter votre base de données</div>
-      <div class="onboarding-subtitle">Chaque famille possède sa propre base de données privée (Firebase), gratuite, sur laquelle personne d'autre n'a accès. Suivez ces étapes une seule fois.</div>
-
-      <div class="onboarding-box">
-        <div class="onboarding-tuto-list">
-          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">1</div>Allez sur <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> et connectez-vous avec un compte Google.</div>
-          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">2</div>Cliquez sur « Ajouter un projet », donnez-lui un nom (ex : votre prénom + Bébé), puis créez-le.</div>
-          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">3</div>Dans le menu de gauche, ouvrez « Firestore Database » → « Créer une base de données ». Choisissez une région en Europe et le mode Natif.</div>
-          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">4</div>Dans l'onglet « Règles », activez le mode test (accès ouvert 30 jours, à reconduire ensuite).</div>
-          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">5</div>Retournez sur ⚙️ « Paramètres du projet » → en bas, cliquez sur l'icône Web « &lt;/&gt; » pour enregistrer une application, donnez-lui un nom.</div>
-          <div class="onboarding-tuto-item"><div class="onboarding-tuto-num">6</div>Firebase affiche un bloc de code contenant <code>firebaseConfig = {"{"} ... {"}"}</code>. Copiez tout ce bloc entre accolades et collez-le ci-dessous.</div>
-        </div>
-
-        <textarea id="onboarding-config-input" placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "...", ... }'></textarea>
-        <div class="onboarding-status" id="onboarding-config-status"></div>
-        <button class="btn-save" onclick="window.obTestAndSaveConfig()">✓ Tester la connexion</button>
-      </div>
-
-      <div id="ob-scan-alt" style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn-secondary" style="width:100%" onclick="window.obToggleScanner()">📷 Ou scanner un QR code déjà généré</button>
-        <div id="onboarding-scan-reader" style="display:none"></div>
-      </div>
-    </div>
-
-    <!-- Étape C : QR code à faire scanner (générée après validation, sur grand écran surtout) -->
-    <div class="onboarding-step" id="ob-step-qr">
-      <div class="onboarding-title">✓ Connexion réussie</div>
-      <div class="onboarding-subtitle">Scannez ce code avec le téléphone de chaque parent : il transmet à la fois la connexion à la base de données et le prénom/date de naissance du bébé, en une seule fois. Vous pourrez toujours retrouver la configuration Firebase dans la console Firebase (Paramètres du projet → Vos applications) si besoin.</div>
-      <div id="onboarding-qr-holder"></div>
-      <button class="btn-save" onclick="window.obContinueAfterQr()">Continuer sur cet appareil aussi</button>
-    </div>
-
-    <!-- Étape D : prénom local à ce téléphone -->
-    <div class="onboarding-step" id="ob-step-myname">
-      <div class="onboarding-title">Et vous, c'est qui ? 🙂</div>
-      <div class="onboarding-subtitle">Ce prénom reste sur cet appareil, pour personnaliser l'accueil (« Bonjour Camille 👋 »).</div>
-      <div class="onboarding-box">
-        <input type="text" id="ob-myname-input" placeholder="Votre prénom">
-        <button class="btn-save" onclick="window.obSaveMyName()">Continuer</button>
-      </div>
-    </div>
-
-    <!-- Étape E : infos bébé (seulement si personne ne les a encore saisies) -->
-    <div class="onboarding-step" id="ob-step-baby">
-      <div class="onboarding-title">👶 Parlez-nous de bébé</div>
-      <div class="onboarding-subtitle">Ces informations resteront sur cet appareil (jamais envoyées à Firestore) — un QR code vous permettra ensuite de les transmettre au téléphone de l'autre parent en un scan.</div>
-      <div class="onboarding-box">
-        <div class="form-group"><div class="form-label">Prénom</div><input type="text" id="ob-baby-name" placeholder="Charlie"></div>
-        <div class="form-group" style="margin-top:10px"><div class="form-label">Date de naissance</div><input type="date" id="ob-baby-birth"></div>
-        <button class="btn-save" style="margin-top:10px" onclick="window.obSaveBabyInfo()">✓ C'est parti</button>
-      </div>
-    </div>
-
-  </div>
-</div>
 
 <!-- Bandeau sync -->
 <div class="sync-banner" id="sync-banner">
@@ -1279,32 +1162,21 @@ textarea#onboarding-config-input {
 
 <div class="toast" id="toast"></div>
 
-<!-- Librairies QR (génération + lecture caméra), chargées avant le module principal -->
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, query, where, orderBy, Timestamp }
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, orderBy, Timestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getSavedFbConfig, getBabyLocal, setBabyLocal, MY_NAME_KEY, isOnboardingComplete } from './shared.js';
 
 // ═══════════════════════════════════════════════════════════════
 // VERSION DE L'APP
 // ═══════════════════════════════════════════════════════════════
 const APP_VERSION = '3.0';
 
-// ── CONFIG FIREBASE (dynamique, saisie une fois par famille lors du premier lancement) ──
-const FB_CONFIG_KEY = 'charlie_fb_config';
+// ── CONFIG FIREBASE (chargée depuis shared.js ; démarrage réel de la connexion, propre à cette page) ──
 let fbApp = null;
 let db = null;
-
-function getSavedFbConfig() {
-  try {
-    const raw = localStorage.getItem(FB_CONFIG_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
-}
 
 function startFirebase(config) {
   fbApp = initializeApp(config);
@@ -1342,18 +1214,10 @@ function showSync(state) {
 // ── BASE DE DONNÉES LOCALE (cache) ────────────────────────
 let DB = { tetees:[], couches:[], soins:[], poids:[], routine:[], siestes:[], vomis:[], temperatures:[], bilans:[] };
 
-// ── PRÉNOM & NAISSANCE DU BÉBÉ : stockés en local (localStorage), jamais sur Firestore ──
-// Transmis d'un appareil à l'autre uniquement via le QR code de l'onboarding.
-const BABY_KEY = 'charlie_baby';
-function getBabyLocal() {
-  try { const r = localStorage.getItem(BABY_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; }
-}
-function setBabyLocal(obj) {
-  try { localStorage.setItem(BABY_KEY, JSON.stringify(obj)); } catch(e) {}
-}
+// Note : prénom/naissance du bébé (getBabyLocal/setBabyLocal) et clés associées sont importés de shared.js
 
 // ── RÉGLAGES PARTAGÉS (Firestore : collection "meta", document "settings") ──
-// Ne contient plus QUE le prochain RDV : le prénom/naissance du bébé restent locaux (voir ci-dessus).
+// Ne contient plus QUE le prochain RDV : le prénom/naissance du bébé restent locaux (voir shared.js).
 let SETTINGS = { rdvDate:'', rdvTitle:'' };
 const SETTINGS_DOC = () => doc(db, 'meta', 'settings');
 
@@ -1436,7 +1300,6 @@ function listenPoids() {
 }
 
 // ── NAVIGATION ────────────────────────────────────────────
-const MY_NAME_KEY = 'charlie_my_name';
 function getGreetingText() {
   const myName = localStorage.getItem(MY_NAME_KEY);
   return myName ? ('Bonjour ' + myName + ' 👋') : 'Bonjour 👋';
@@ -2708,223 +2571,6 @@ window.exportData = function() {
 
 // ── INIT ──────────────────────────────────────────────────
 
-// ═══ ONBOARDING : navigation entre étapes ═══
-window.obGoto = function(stepId) {
-  document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active'));
-  const el = document.getElementById(stepId);
-  if (el) el.classList.add('active');
-};
-
-// ═══ ONBOARDING : lecture souple de la config collée (JSON strict ou objet JS Firebase) ═══
-function parseFirebaseConfigInput(raw) {
-  let text = raw.trim();
-  const braceStart = text.indexOf('{');
-  const braceEnd = text.lastIndexOf('}');
-  if (braceStart === -1 || braceEnd === -1) throw new Error('Aucune accolade trouvée');
-  text = text.slice(braceStart, braceEnd + 1);
-  try {
-    return JSON.parse(text);
-  } catch(e) {
-    const loose = text
-      .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":')
-      .replace(/'/g, '"')
-      .replace(/,(\s*})/g, '$1');
-    return JSON.parse(loose);
-  }
-}
-
-// ═══ ONBOARDING : teste une config en écrivant un document de vérification ═══
-async function tryConnectConfig(config) {
-  try {
-    const testApp = initializeApp(config, 'app-' + Date.now());
-    const testDb = getFirestore(testApp);
-    await setDoc(doc(testDb, '_health', 'ping'), { ts: Date.now() });
-    fbApp = testApp;
-    db = testDb;
-    return true;
-  } catch(e) { return false; }
-}
-
-// Construit une URL vers cette même appli avec le payload encodé en paramètre.
-// Indispensable pour que l'appareil photo NATIF du téléphone (pas le scanner intégré à la PWA)
-// sache proposer "Ouvrir" au lieu de simplement afficher du texte brut.
-function buildSetupUrl(payload) {
-  const base = window.location.origin + window.location.pathname;
-  return base + '?setup=' + encodeURIComponent(JSON.stringify(payload));
-}
-
-function showConfigQr(text) {
-  const holder = document.getElementById('onboarding-qr-holder');
-  holder.innerHTML = '';
-  try { new QRCode(holder, { text: text, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); }
-  catch(e) { holder.textContent = 'QR indisponible — utilisez la config affichée dans la console Firebase pour l\'autre téléphone.'; }
-}
-
-// Construit le QR combiné (config Firebase + prénom/naissance du bébé) et affiche l'étape de partage
-function showCombinedQrAndContinue() {
-  const config = getSavedFbConfig();
-  const baby = getBabyLocal() || {};
-  const payload = { fbConfig: config, babyName: baby.name, babyBirth: baby.birth };
-  showConfigQr(buildSetupUrl(payload));
-  window.obGoto('ob-step-qr');
-}
-
-// Point d'entrée commun après une config Firebase validée (saisie manuelle ou scan) :
-// vérifie si le prénom/naissance du bébé sont déjà connus sur CET appareil, sinon les demande.
-function afterConfigReady() {
-  const baby = getBabyLocal();
-  if (!baby || !baby.name || !baby.birth) {
-    window.obGoto('ob-step-baby');
-    return;
-  }
-  showCombinedQrAndContinue();
-}
-
-window.obTestAndSaveConfig = async function() {
-  const statusEl = document.getElementById('onboarding-config-status');
-  const raw = document.getElementById('onboarding-config-input').value;
-  statusEl.textContent = 'Vérification en cours…'; statusEl.className = 'onboarding-status';
-  let config;
-  try {
-    config = parseFirebaseConfigInput(raw);
-  } catch(e) {
-    statusEl.textContent = "⚠ Impossible de lire ce texte. Vérifiez que vous avez copié tout le bloc entre accolades.";
-    statusEl.className = 'onboarding-status error';
-    return;
-  }
-  const ok = await tryConnectConfig(config);
-  if (!ok) {
-    statusEl.textContent = '⚠ La connexion a échoué. Vérifiez la configuration et que Firestore Database est bien créé.';
-    statusEl.className = 'onboarding-status error';
-    return;
-  }
-  localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(config));
-  statusEl.textContent = '✓ Connexion réussie !';
-  statusEl.className = 'onboarding-status ok';
-  afterConfigReady();
-};
-
-window.obContinueAfterQr = async function() { await proceedAfterFirebase(); };
-
-// ═══ ONBOARDING : lecture de QR code via la caméra ═══
-// Le QR contient une URL (?setup=...) pour être exploitable par l'appareil photo natif du téléphone ;
-// on garde aussi la lecture de JSON brut pour compatibilité avec d'anciens QR.
-function extractSetupPayloadFromText(text) {
-  try { return JSON.parse(text); } catch(e) {}
-  try {
-    const url = new URL(text);
-    const raw = url.searchParams.get('setup');
-    if (raw) return JSON.parse(raw);
-  } catch(e) {}
-  return null;
-}
-
-let obScannerInstance = null;
-window.obToggleScanner = function() {
-  const reader = document.getElementById('onboarding-scan-reader');
-  const isHidden = reader.style.display === 'none' || !reader.style.display;
-  if (!isHidden) {
-    if (obScannerInstance) obScannerInstance.stop().catch(()=>{});
-    reader.style.display = 'none';
-    return;
-  }
-  reader.style.display = 'block';
-  obScannerInstance = new Html5Qrcode('onboarding-scan-reader');
-  obScannerInstance.start(
-    { facingMode: 'environment' },
-    { fps: 10, qrbox: 220 },
-    async (decodedText) => {
-      const payload = extractSetupPayloadFromText(decodedText);
-      if (!payload) return;
-      await obScannerInstance.stop().catch(()=>{});
-      reader.style.display = 'none';
-      const config = payload.fbConfig || payload;
-      const ok = await tryConnectConfig(config);
-      if (!ok) { showToast('⚠ QR code invalide ou connexion impossible'); return; }
-      localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(config));
-      if (payload.fbConfig && payload.babyName && payload.babyBirth) {
-        setBabyLocal({ name: payload.babyName, birth: payload.babyBirth });
-      }
-      showToast('✓ Configuration récupérée');
-      afterConfigReady();
-    },
-    () => {}
-  ).catch(() => { showToast('⚠ Caméra indisponible'); reader.style.display = 'none'; });
-};
-
-// ═══ ONBOARDING : prénom local à cet appareil (jamais partagé) ═══
-window.obSaveMyName = async function() {
-  const val = document.getElementById('ob-myname-input').value.trim();
-  if (!val) { showToast('⚠ Entrez un prénom'); return; }
-  localStorage.setItem(MY_NAME_KEY, val);
-  await proceedAfterFirebase();
-};
-
-// ═══ ONBOARDING : infos bébé — stockées en local, jamais sur Firestore ═══
-window.obSaveBabyInfo = async function() {
-  const name = document.getElementById('ob-baby-name').value.trim();
-  const birth = document.getElementById('ob-baby-birth').value;
-  if (!name || !birth) { showToast('⚠ Prénom et date de naissance requis'); return; }
-  setBabyLocal({ name, birth });
-  showCombinedQrAndContinue();
-};
-
-// ═══ ORCHESTRATION GÉNÉRALE ═══
-function showOnboarding() { document.getElementById('onboarding-overlay').classList.remove('hidden'); }
-
-// Ne vérifie plus que le prénom du parent : le bébé est garanti connu avant d'arriver ici
-// (résolu par afterConfigReady() lors du tout premier réglage de cet appareil).
-async function proceedAfterFirebase() {
-  if (!localStorage.getItem(MY_NAME_KEY)) {
-    showOnboarding();
-    window.obGoto('ob-step-myname');
-    return;
-  }
-  finishOnboardingAndBoot();
-}
-
-function finishOnboardingAndBoot() {
-  document.getElementById('onboarding-overlay').classList.add('hidden');
-  document.body.classList.add('app-ready');
-  bootApp();
-}
-
-// Traite le lien ?setup=... si l'appli a été ouverte depuis un QR scanné par l'appareil photo natif.
-// Ignoré si cet appareil a déjà sa propre configuration (évite un écrasement accidentel).
-async function processSetupUrlIfPresent() {
-  const params = new URLSearchParams(window.location.search);
-  const raw = params.get('setup');
-  if (!raw) return false;
-  history.replaceState(null, '', window.location.pathname); // nettoie l'URL immédiatement
-  if (getSavedFbConfig()) return false;
-  let payload;
-  try { payload = JSON.parse(raw); } catch(e) { return false; }
-  const config = payload.fbConfig || payload;
-  const ok = await tryConnectConfig(config);
-  if (!ok) { showToast('⚠ Lien de configuration invalide'); return false; }
-  localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(config));
-  if (payload.fbConfig && payload.babyName && payload.babyBirth) {
-    setBabyLocal({ name: payload.babyName, birth: payload.babyBirth });
-  }
-  showOnboarding();
-  afterConfigReady();
-  return true;
-}
-
-async function runOnboardingOrStart() {
-  if (await processSetupUrlIfPresent()) return;
-
-  const savedConfig = getSavedFbConfig();
-  if (!savedConfig) {
-    showOnboarding();
-    const isMobile = window.matchMedia('(max-width: 768px)').matches;
-    window.obGoto(isMobile ? 'ob-step-mobile-gate' : 'ob-step-config');
-    return;
-  }
-  startFirebase(savedConfig);
-  await proceedAfterFirebase();
-}
-
 // ═══ DÉMARRAGE RÉEL DE L'APPLICATION (une fois onboarding terminé) ═══
 function bootApp() {
   loadLocal();
@@ -2960,7 +2606,19 @@ function bootApp() {
   listenPoids();
 }
 
-runOnboardingOrStart();
+// Point d'entrée : si l'onboarding n'est pas terminé sur cet appareil, direction config.html.
+// Sinon, on démarre directement l'appli (aucune logique d'onboarding ici, tout est dans config.html).
+function startAppOrRedirect() {
+  if (!isOnboardingComplete()) {
+    window.location.href = 'config.html';
+    return;
+  }
+  startFirebase(getSavedFbConfig());
+  document.body.classList.add('app-ready');
+  bootApp();
+}
+
+startAppOrRedirect();
 
 </script>
 </body>
