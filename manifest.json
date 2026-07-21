@@ -2,7 +2,7 @@
   "name": "Charlie – Suivi bébé",
   "short_name": "Charlie",
   "description": "Application de suivi de santé pour Charlie",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "display": "standalone",
   "background_color": "#FFF9F5",
   "theme_color": "#FFF9F5",
