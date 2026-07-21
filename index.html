@@ -99,5 +99,10 @@ body {
   <div class="footer-note">Distribué librement sous licence MIT — Bear80140</div>
 
 </div>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+</script>
 </body>
 </html>
