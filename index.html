@@ -2745,10 +2745,18 @@ async function tryConnectConfig(config) {
   } catch(e) { return false; }
 }
 
-function showConfigQr(payload) {
+// Construit une URL vers cette même appli avec le payload encodé en paramètre.
+// Indispensable pour que l'appareil photo NATIF du téléphone (pas le scanner intégré à la PWA)
+// sache proposer "Ouvrir" au lieu de simplement afficher du texte brut.
+function buildSetupUrl(payload) {
+  const base = window.location.origin + window.location.pathname;
+  return base + '?setup=' + encodeURIComponent(JSON.stringify(payload));
+}
+
+function showConfigQr(text) {
   const holder = document.getElementById('onboarding-qr-holder');
   holder.innerHTML = '';
-  try { new QRCode(holder, { text: JSON.stringify(payload), width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); }
+  try { new QRCode(holder, { text: text, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); }
   catch(e) { holder.textContent = 'QR indisponible — utilisez la config affichée dans la console Firebase pour l\'autre téléphone.'; }
 }
 
@@ -2756,7 +2764,8 @@ function showConfigQr(payload) {
 function showCombinedQrAndContinue() {
   const config = getSavedFbConfig();
   const baby = getBabyLocal() || {};
-  showConfigQr({ fbConfig: config, babyName: baby.name, babyBirth: baby.birth });
+  const payload = { fbConfig: config, babyName: baby.name, babyBirth: baby.birth };
+  showConfigQr(buildSetupUrl(payload));
   window.obGoto('ob-step-qr');
 }
 
@@ -2798,8 +2807,18 @@ window.obTestAndSaveConfig = async function() {
 window.obContinueAfterQr = async function() { await proceedAfterFirebase(); };
 
 // ═══ ONBOARDING : lecture de QR code via la caméra ═══
-// Le QR peut contenir soit { fbConfig, babyName, babyBirth } (généré par cette appli),
-// soit un firebaseConfig brut seul (compatibilité avec une saisie manuelle transmise autrement).
+// Le QR contient une URL (?setup=...) pour être exploitable par l'appareil photo natif du téléphone ;
+// on garde aussi la lecture de JSON brut pour compatibilité avec d'anciens QR.
+function extractSetupPayloadFromText(text) {
+  try { return JSON.parse(text); } catch(e) {}
+  try {
+    const url = new URL(text);
+    const raw = url.searchParams.get('setup');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
 let obScannerInstance = null;
 window.obToggleScanner = function() {
   const reader = document.getElementById('onboarding-scan-reader');
@@ -2815,8 +2834,8 @@ window.obToggleScanner = function() {
     { facingMode: 'environment' },
     { fps: 10, qrbox: 220 },
     async (decodedText) => {
-      let payload;
-      try { payload = JSON.parse(decodedText); } catch(e) { return; }
+      const payload = extractSetupPayloadFromText(decodedText);
+      if (!payload) return;
       await obScannerInstance.stop().catch(()=>{});
       reader.style.display = 'none';
       const config = payload.fbConfig || payload;
@@ -2870,7 +2889,31 @@ function finishOnboardingAndBoot() {
   bootApp();
 }
 
+// Traite le lien ?setup=... si l'appli a été ouverte depuis un QR scanné par l'appareil photo natif.
+// Ignoré si cet appareil a déjà sa propre configuration (évite un écrasement accidentel).
+async function processSetupUrlIfPresent() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('setup');
+  if (!raw) return false;
+  history.replaceState(null, '', window.location.pathname); // nettoie l'URL immédiatement
+  if (getSavedFbConfig()) return false;
+  let payload;
+  try { payload = JSON.parse(raw); } catch(e) { return false; }
+  const config = payload.fbConfig || payload;
+  const ok = await tryConnectConfig(config);
+  if (!ok) { showToast('⚠ Lien de configuration invalide'); return false; }
+  localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(config));
+  if (payload.fbConfig && payload.babyName && payload.babyBirth) {
+    setBabyLocal({ name: payload.babyName, birth: payload.babyBirth });
+  }
+  showOnboarding();
+  afterConfigReady();
+  return true;
+}
+
 async function runOnboardingOrStart() {
+  if (await processSetupUrlIfPresent()) return;
+
   const savedConfig = getSavedFbConfig();
   if (!savedConfig) {
     showOnboarding();
