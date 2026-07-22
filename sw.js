@@ -2,7 +2,11 @@ const CACHE = 'charlie-v1';
 const ASSETS = ['./app.html', './manifest.json'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil(
+    caches.open(CACHE).then(c =>
+      Promise.allSettled(ASSETS.map(url => c.add(url)))
+    )
+  );
   self.skipWaiting();
 });
 
