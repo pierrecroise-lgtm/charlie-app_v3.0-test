@@ -244,11 +244,13 @@ window.obToggleScanner = function() {
       const ok = await tryConnectConfig(config);
       if (!ok) { showToast('⚠ QR code invalide ou connexion impossible'); return; }
       localStorage.setItem('charlie_fb_config', JSON.stringify(config));
+      showToast('✓ Configuration récupérée');
       if (payload.fbConfig && payload.babyName && payload.babyBirth) {
         setBabyLocal({ name: payload.babyName, birth: payload.babyBirth });
+        await proceedAfterFirebase(); // bébé déjà connu : direction prénom du parent, pas un nouveau QR
+      } else {
+        afterConfigReady();
       }
-      showToast('✓ Configuration récupérée');
-      afterConfigReady();
     },
     () => {}
   ).catch(() => { showToast('⚠ Caméra indisponible'); reader.style.display = 'none'; });
@@ -293,8 +295,10 @@ async function processSetupUrlIfPresent() {
   localStorage.setItem('charlie_fb_config', JSON.stringify(config));
   if (payload.fbConfig && payload.babyName && payload.babyBirth) {
     setBabyLocal({ name: payload.babyName, birth: payload.babyBirth });
+    await proceedAfterFirebase(); // bébé déjà connu : direction prénom du parent, pas un nouveau QR
+  } else {
+    afterConfigReady();
   }
-  afterConfigReady();
   return true;
 }
 
