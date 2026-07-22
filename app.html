@@ -1349,7 +1349,100 @@ function loadLocal() {
     if(r) Object.assign(DB,JSON.parse(r)); 
   } catch(e){}
 }
+//----------------------------
+// PHOTO DE BÉBÉ
+//----------------------------
 
+function getBabyPicture(){
+
+    return localStorage.getItem("charlie_baby_picture");
+
+}
+
+
+function saveBabyPicture(image){
+
+    localStorage.setItem(
+        "charlie_baby_picture",
+        image
+    );
+
+}
+
+
+function removeBabyPicture(){
+
+    localStorage.removeItem(
+        "charlie_baby_picture"
+    );
+
+    updateBabyPicture();
+
+    showToast(
+        "Photo supprimée"
+    );
+
+}
+
+
+function changeBabyPicture(event){
+
+    const file = event.target.files[0];
+
+    if(!file) return;
+
+
+    const reader = new FileReader();
+
+
+    reader.onload = function(e){
+
+        saveBabyPicture(
+            e.target.result
+        );
+
+        updateBabyPicture();
+
+        showToast(
+            "Photo enregistrée ✓"
+        );
+
+    };
+
+
+    reader.readAsDataURL(file);
+
+}
+
+
+
+function updateBabyPicture(){
+
+    const img = document.getElementById(
+        "home-baby-picture"
+    );
+
+
+    if(!img) return;
+
+
+    const picture = getBabyPicture();
+
+
+    if(picture){
+
+        img.src = picture;
+
+    }
+
+    else{
+
+        img.src =
+        "./images/home.png";
+
+    }
+
+}
 // ── FIREBASE : ÉCRITURE ───────────────────────────────────
 async function fbSet(collName, entry) {
   try {
