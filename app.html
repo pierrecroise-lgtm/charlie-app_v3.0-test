@@ -1131,6 +1131,42 @@ class="home-image"
       <div class="module-content">
         <div class="chart-card">
           <div class="form-title">👶 Bébé</div>
+          <div class="form-group" style="margin-top:15px">
+
+<div class="form-label">
+Photo de Charlie
+</div>
+
+<input
+type="file"
+id="setting-photo"
+accept="image/*"
+style="display:none"
+onchange="changeBabyPicture(event)"
+>
+
+<button
+class="btn-secondary"
+style="width:100%"
+onclick="document.getElementById('setting-photo').click()"
+>
+
+📷 Choisir une photo
+
+</button>
+
+
+<button
+class="btn-secondary"
+style="width:100%;margin-top:8px"
+onclick="removeBabyPicture()"
+>
+
+🗑 Supprimer la photo
+
+</button>
+
+</div>
           <div class="form-group" style="margin-top:10px"><div class="form-label">Prénom</div><input type="text" id="setting-name" placeholder="Charlie" value="Charlie"></div>
           <div class="form-group" style="margin-top:8px"><div class="form-label">Date de naissance</div><input type="date" id="setting-birth"></div>
           <button class="btn-save" style="margin-top:10px" onclick="saveSettings()">✓ Sauvegarder</button>
