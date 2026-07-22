@@ -1145,6 +1145,12 @@ body:not(.app-ready) .sync-banner { display: none; }
           </div>
         </div>
         <div class="chart-card">
+          <div class="form-title">📱 Ajouter un appareil</div>
+          <div style="font-size:13px;color:#888780;margin:8px 0 12px">Génère un QR code à scanner avec un autre téléphone (l'autre parent, une nounou...) pour lui donner accès aux mêmes données, sans ressaisir la configuration.</div>
+          <button class="btn-secondary" style="width:100%;padding:12px;text-align:center" onclick="generateShareQr()">📷 Générer le QR code</button>
+          <div id="settings-qr-holder" style="display:none;justify-content:center;padding:16px;background:#fff;border-radius:14px;margin-top:10px"></div>
+        </div>
+        <div class="chart-card">
           <div class="form-title">ℹ️ À propos</div>
           <div style="font-size:13px;color:#888780;margin:8px 0 12px">
             <div><strong>Charlie App</strong></div>
@@ -1208,12 +1214,15 @@ body:not(.app-ready) .sync-banner { display: none; }
 
 <div class="toast" id="toast"></div>
 
+<!-- Librairie QR (génération) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, orderBy, Timestamp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getSavedFbConfig, getBabyLocal, setBabyLocal, MY_NAME_KEY, isOnboardingComplete } from './shared.js';
+import { getSavedFbConfig, getBabyLocal, setBabyLocal, MY_NAME_KEY, isOnboardingComplete, buildSetupUrl } from './shared.js';
 
 // ═══════════════════════════════════════════════════════════════
 // VERSION DE L'APP
@@ -2612,6 +2621,28 @@ window.exportData = function() {
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='charlie_data_'+new Date().toISOString().split('T')[0]+'.json'; a.click();
   showToast('⬇ Export téléchargé');
+};
+
+// Régénère le QR combiné (config Firebase + prénom/naissance du bébé) pour ajouter un nouvel appareil.
+// Le téléphone qui scanne arrive directement sur config.html à l'étape "prénom du parent"
+// (le bébé et la config Firestore sont déjà connus, pas besoin de les ressaisir).
+window.generateShareQr = function() {
+  const config = getSavedFbConfig();
+  const baby = getBabyLocal();
+  if (!config || !baby || !baby.name || !baby.birth) {
+    showToast('⚠ Configuration incomplète sur cet appareil');
+    return;
+  }
+  const payload = { fbConfig: config, babyName: baby.name, babyBirth: baby.birth };
+  const holder = document.getElementById('settings-qr-holder');
+  holder.innerHTML = '';
+  holder.style.display = 'flex';
+  try {
+    new QRCode(holder, { text: buildSetupUrl(payload), width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+  } catch(e) {
+    holder.style.display = 'none';
+    showToast('⚠ QR indisponible');
+  }
 };
 
 // ── INIT ──────────────────────────────────────────────────
