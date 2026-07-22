@@ -61,7 +61,8 @@ export function parseFirebaseConfigInput(raw) {
 
 // Construit l'URL de partage (config.html?setup=...), exploitable par l'appareil photo natif du téléphone
 export function buildSetupUrl(payload) {
-  const base = window.location.origin + window.location.pathname;
+  // Toujours vers config.html, même appelé depuis app.html (ex: partage QR depuis Réglages)
+  const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, 'config.html');
   return base + '?setup=' + encodeURIComponent(JSON.stringify(payload));
 }
 
