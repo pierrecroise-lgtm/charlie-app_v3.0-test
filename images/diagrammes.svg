@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="diagrammes" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff7d2;
+      }
+
+      .cls-2 {
+        stroke: #ceb154;
+        stroke-width: 1.14px;
+      }
+
+      .cls-2, .cls-3, .cls-4, .cls-5, .cls-6 {
+        stroke-miterlimit: 10;
+      }
+
+      .cls-2, .cls-3, .cls-5 {
+        fill: none;
+      }
+
+      .cls-3 {
+        stroke: #e5561e;
+      }
+
+      .cls-3, .cls-6 {
+        stroke-width: .87px;
+      }
+
+      .cls-4 {
+        fill: #2f4997;
+        stroke-width: .56px;
+      }
+
+      .cls-4, .cls-5 {
+        stroke: #2e4898;
+      }
+
+      .cls-7 {
+        fill: #e5561e;
+      }
+
+      .cls-5 {
+        stroke-width: .7px;
+      }
+
+      .cls-6 {
+        fill: #ceb156;
+        stroke: #ceb155;
+      }
+    </style>
+  </defs>
+  <circle class="cls-1" cx="40" cy="40" r="37.11"/>
+  <g>
+    <polyline class="cls-3" points="57.58 62.84 17.16 62.84 17.16 22.42"/>
+    <path class="cls-7" d="M62.84,62.84c-2.48-.92-5.55-2.49-7.46-4.15l1.5,4.15-1.5,4.15c1.91-1.66,4.98-3.23,7.46-4.15Z"/>
+    <path class="cls-7" d="M17.16,17.16c.92,2.48,2.49,5.55,4.15,7.46l-4.15-1.5-4.15,1.5c1.66-1.91,3.23-4.98,4.15-7.46Z"/>
+  </g>
+  <ellipse class="cls-4" cx="31.61" cy="46.54" rx="1.57" ry="1.77"/>
+  <polyline class="cls-5" points="20.67 51.99 30.83 47.45 40.82 39.73 50.25 28.87 55.9 18.16"/>
+  <polyline class="cls-2" points="20.67 57.67 31.76 53.24 37.83 56.01 45.73 53.24 56.95 47.56 62.42 41.33 69.05 33.4"/>
+  <line class="cls-3" x1="14.82" y1="29.52" x2="19.5" y2="29.52"/>
+  <line class="cls-3" x1="14.82" y1="36.5" x2="19.5" y2="36.5"/>
+  <line class="cls-3" x1="14.82" y1="43.48" x2="19.5" y2="43.48"/>
+  <line class="cls-3" x1="14.82" y1="50.47" x2="19.5" y2="50.47"/>
+  <ellipse class="cls-4" cx="43.75" cy="36.5" rx="1.57" ry="1.77"/>
+  <ellipse class="cls-4" cx="55.9" cy="19.33" rx="1.57" ry="1.77"/>
+  <ellipse class="cls-6" cx="31.03" cy="53.76" rx="1.57" ry="1.77"/>
+  <ellipse class="cls-6" cx="38.96" cy="56.72" rx="1.57" ry="1.77"/>
+  <ellipse class="cls-6" cx="56.79" cy="48.31" rx="1.57" ry="1.77"/>
+  <ellipse class="cls-6" cx="69.59" cy="33.06" rx="1.57" ry="1.77"/>
+</svg>
