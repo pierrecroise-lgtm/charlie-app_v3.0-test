@@ -6,99 +6,258 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#FFF9F5">
 <link rel="manifest" href="manifest.json">
-<title>Charlie App — Suivi bébé, en toute simplicité</title>
+<title>Charlie App — Le carnet de suivi bébé simple, gratuit et respectueux de votre vie privée</title>
 <style>
+:root{
+  --bg:#FFF9F5;
+  --card:#FFFFFF;
+  --primary:#EF9F27;
+  --primary-dark:#BA7517;
+  --text:#2C2C2A;
+  --light:#888780;
+  --border:#EDE9E3;
+  --shadow:0 15px 40px rgba(0,0,0,.06);
+}
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #FFF9F5; color: #2C2C2A; line-height: 1.6;
+  background: linear-gradient(180deg, #FFF9F5 0%, #FFF6EF 100%);
+  color: var(--text); line-height: 1.7;
 }
-.wrap { max-width: 560px; margin: 0 auto; padding: 32px 20px 60px; display: flex; flex-direction: column; gap: 22px; }
+.container { max-width: 1000px; margin: 0 auto; padding: 30px 20px 80px; }
 
-.hero { text-align: center; display: flex; flex-direction: column; gap: 10px; }
-.hero-emoji { font-size: 44px; }
-.hero h1 { font-size: 24px; font-weight: 800; }
-.hero p { font-size: 14px; color: #888780; }
-
-.card {
-  background: #fff; border: 1px solid #EDE9E3; border-radius: 16px; padding: 18px 20px;
-  display: flex; flex-direction: column; gap: 10px;
+/* ── HERO ── */
+.hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 50px; align-items: center; min-height: 60vh; }
+.hero img { width: 100%; max-width: 320px; display: block; margin: 0 auto; }
+.badge {
+  display: inline-block; padding: 8px 18px; border-radius: 30px; background: #fff;
+  box-shadow: var(--shadow); font-size: 13px; font-weight: 600; margin-bottom: 20px;
 }
-.card h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.card p, .card li { font-size: 13px; color: #444441; }
-.card ul { padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+h1 { font-size: 40px; line-height: 1.15; margin-bottom: 18px; font-weight: 800; }
+.hero p { font-size: 16px; color: var(--light); margin-bottom: 30px; }
+.buttons { display: flex; gap: 16px; flex-wrap: wrap; }
+.btn { text-decoration: none; padding: 16px 26px; border-radius: 16px; font-weight: 700; font-size: 15px; transition: background .2s; }
+.btn-primary { background: var(--primary); color: #fff; box-shadow: 0 10px 25px rgba(239,159,39,.25); }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--primary); }
 
-.notice {
-  background: #FEF9E7; border: 1px solid #F5CB5C; border-radius: 14px; padding: 16px 18px;
-  font-size: 12.5px; color: #7D6008;
+/* ── SECTIONS ── */
+.section { margin-top: 90px; }
+.section-title { font-size: 30px; margin-bottom: 16px; text-align: center; font-weight: 800; }
+.section-subtitle { max-width: 640px; margin: 0 auto 40px; text-align: center; color: var(--light); font-size: 15px; }
+
+.card { background: #fff; padding: 26px; border-radius: 24px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+.card h3 { margin-bottom: 12px; font-size: 19px; }
+.card p { color: #555; font-size: 14.5px; }
+.card p + p { margin-top: 12px; }
+.card ul { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.card li { color: #555; font-size: 14.5px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 20px; }
+
+/* ── TIMELINE ── */
+.timeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap: 20px; }
+.step { background: #fff; padding: 26px; border-radius: 22px; box-shadow: var(--shadow); }
+.number {
+  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; margin-bottom: 16px;
 }
+.step h3 { font-size: 17px; margin-bottom: 8px; }
+.step p { color: #555; font-size: 14px; }
 
-.links-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.link-btn {
-  background: #fff; border: 1px solid #EDE9E3; border-radius: 12px; padding: 12px;
-  text-align: center; font-size: 13px; font-weight: 600; color: #633806;
-  text-decoration: none; transition: background 0.15s;
+/* ── FEATURES ── */
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 20px; }
+.feature { background: #fff; padding: 26px; border-radius: 22px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+.feature img { width: 56px; height: 56px; margin-bottom: 14px; }
+.feature h3 { font-size: 17px; margin-bottom: 8px; }
+.feature p { color: #555; font-size: 14px; }
+.feature .soon { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; color: #7D6008; background: #FEF9E7; border: 1px solid #F5CB5C; border-radius: 20px; padding: 3px 10px; }
+
+/* ── NOTICE ── */
+.notice { margin-top: 60px; padding: 24px 26px; border-radius: 22px; background: #FEF9E7; border: 1px solid #F5CB5C; color: #7D6008; font-size: 14px; }
+
+/* ── GITHUB LINKS ── */
+.github { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 14px; margin-top: 26px; }
+.link { text-decoration: none; padding: 16px; background: #fff; border-radius: 16px; border: 1px solid var(--border); font-weight: 600; font-size: 14px; color: var(--text); text-align: center; transition: border-color .2s; }
+.link:hover { border-color: var(--primary); }
+
+.footer { margin-top: 70px; text-align: center; color: #B4B2A9; font-size: 13px; }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; text-align: center; gap: 30px; min-height: auto; }
+  .hero img { order: -1; max-width: 220px; }
+  h1 { font-size: 32px; }
+  .buttons { justify-content: center; }
+  .section { margin-top: 60px; }
 }
-.link-btn:hover { background: #FFF4EE; border-color: #EF9F27; }
-
-.cta {
-  display: block; text-align: center; padding: 16px; border-radius: 14px;
-  background: #EF9F27; color: #fff; font-size: 15px; font-weight: 700;
-  text-decoration: none; box-shadow: 0 4px 14px rgba(239,159,39,0.28);
-}
-.cta:hover { background: #BA7517; }
-
-.footer-note { text-align: center; font-size: 11px; color: #B4B2A9; }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <div class="hero">
-    <div class="hero-emoji">👶</div>
-    <h1>Charlie App</h1>
-    <p>Un carnet de suivi bébé simple, gratuit, sans publicité et sans revente de vos données.</p>
-  </div>
+<div class="container">
 
-  <div class="card">
-    <h2>🙋 Qui suis-je ?</h2>
-    <p>
-      <!-- TODO Pierre : remplace ce paragraphe par ta propre présentation -->
-      Je m'appelle [Pierre], papa développeur amateur. J'ai créé cette application pour suivre le quotidien de mon
-      bébé avec ma compagne, puis je l'ai rendue disponible gratuitement pour d'autres familles.
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>⚙️ Comment ça fonctionne ?</h2>
-    <p>Chaque famille possède sa <strong>propre base de données</strong> privée et gratuite (Firebase), qu'elle configure elle-même en quelques minutes lors de la première utilisation.</p>
-    <ul>
-      <li>Vos données ne transitent jamais par mes serveurs — je n'y ai pas accès.</li>
-      <li>Les deux parents accèdent aux mêmes informations en temps réel, chacun sur son téléphone.</li>
-      <li>Le prénom et la date de naissance de bébé restent uniquement sur vos appareils, jamais envoyés à Firestore.</li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h2>🔍 Transparence</h2>
-    <p>Le code de l'application est entièrement public et consultable. Vous pouvez vérifier vous-même ce qu'il fait.</p>
-    <div class="links-grid">
-      <a class="link-btn" href="https://github.com/Bear80140/charlie-app" target="_blank">📂 Code source</a>
-      <a class="link-btn" href="https://github.com/Bear80140/charlie-app#readme" target="_blank">📖 README</a>
-      <a class="link-btn" href="https://github.com/Bear80140/charlie-app/blob/main/LICENSE" target="_blank">⚖️ Licence MIT</a>
-      <a class="link-btn" href="https://github.com/Bear80140/charlie-app/issues" target="_blank">💬 Signaler un souci</a>
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <span class="badge">❤ Gratuit • Sans publicité • Respectueux de votre vie privée</span>
+      <h1>Le carnet de suivi bébé pensé pour les parents.</h1>
+      <p>
+        Charlie App permet de suivre simplement les tétées, les changes, le sommeil et les
+        informations importantes de votre bébé, sans publicité et sans collecte de données personnelles.
+      </p>
+      <div class="buttons">
+        <a href="app.html" class="btn btn-primary">Commencer avec Charlie App</a>
+        <a href="#fonctionnement" class="btn btn-secondary">Comment ça marche ?</a>
+      </div>
     </div>
-  </div>
+    <div>
+      <img src="./icon-512.png" alt="Logo Charlie App">
+    </div>
+  </section>
+
+  <!-- POURQUOI -->
+  <section class="section">
+    <h2 class="section-title">Pourquoi Charlie App ?</h2>
+    <p class="section-subtitle">
+      Une application née simplement d'un besoin de jeunes parents : continuer le suivi réalisé
+      à la maternité, sans abonnement, sans publicité et sans partager ses données.
+    </p>
+    <div class="card">
+      <p>
+        À la naissance de notre premier enfant, nous disposions d'une feuille de suivi pour noter
+        les horaires des tétées, les changes ou encore le poids. En rentrant à la maison, nous
+        souhaitions continuer à suivre ces informations.
+      </p>
+      <p>
+        Mais les applications que nous avons testées étaient soit payantes, soit remplies de
+        publicités, demandaient beaucoup trop d'informations personnelles ou limitaient rapidement
+        leurs fonctionnalités.
+      </p>
+      <p>
+        N'étant pas développeur mais tout de même assez à l'aise avec l'informatique, je me suis dit
+        qu'il devait être possible de proposer quelque chose de plus simple et plus respectueux de
+        la vie privée. Charlie App était née !
+      </p>
+      <p>
+        Une cousine l'a utilisée à son tour, puis je me suis dit que cet outil pourrait peut-être
+        être utile à d'autres jeunes parents.
+      </p>
+    </div>
+  </section>
+
+  <!-- COMMENT CA FONCTIONNE -->
+  <section class="section" id="fonctionnement">
+    <h2 class="section-title">Comment ça fonctionne ?</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>🔒 100% privée</h3>
+        <p>
+          Chaque famille possède sa <strong>propre base de données</strong> Firebase, gratuite et privée,
+          qu'elle configure elle-même en quelques minutes. Vos données ne transitent jamais par mes
+          serveurs — je n'y ai pas accès.
+        </p>
+      </div>
+      <div class="card">
+        <h3>🔄 Synchronisée</h3>
+        <p>
+          Les deux parents accèdent aux mêmes informations en temps réel, chacun sur son téléphone.
+        </p>
+      </div>
+      <div class="card">
+        <h3>👶 Prénom et naissance protégés</h3>
+        <p>
+          Le prénom et la date de naissance de bébé restent uniquement stockés sur vos appareils,
+          jamais envoyés à Firestore.
+        </p>
+      </div>
+      <div class="card">
+        <h3>📖 Open source</h3>
+        <p>
+          Le code est public et librement consultable. Vous savez exactement ce que fait l'application.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALLATION -->
+  <section class="section">
+    <h2 class="section-title">Installation en quelques minutes</h2>
+    <div class="timeline">
+      <div class="step">
+        <div class="number">1</div>
+        <h3>Créer Firebase</h3>
+        <p>Charlie App vous guide dans la création de votre base de données gratuite.</p>
+      </div>
+      <div class="step">
+        <div class="number">2</div>
+        <h3>Scanner le QR Code</h3>
+        <p>Un QR Code permet à votre partenaire d'ouvrir l'application immédiatement sur son téléphone.</p>
+      </div>
+      <div class="step">
+        <div class="number">3</div>
+        <h3>Installer l'application</h3>
+        <p>Depuis votre navigateur, installez Charlie App comme n'importe quelle autre application.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FONCTIONNALITÉS -->
+  <section class="section">
+    <h2 class="section-title">Quelques fonctionnalités</h2>
+    <div class="features">
+      <div class="feature">
+        <img src="./images/down_allaitement.svg" alt="Suivi de l'allaitement">
+        <h3>Suivi de l'allaitement</h3>
+        <p>Suivez facilement les horaires et durées des tétées, sein par sein.</p>
+      </div>
+      <div class="feature">
+        <img src="./images/down_rythme.svg" alt="Rythme de bébé">
+        <h3>Rythme de bébé</h3>
+        <p>Visualisez rapidement les informations importantes du quotidien.</p>
+      </div>
+      <div class="feature">
+        <img src="./images/down_couches.svg" alt="Suivi des changes">
+        <h3>Suivi des changes</h3>
+        <p>
+          Enregistrez facilement les couches changées et indiquez si elles vous semblent anormales,
+          pour conserver un historique précis des premiers mois de bébé.
+        </p>
+      </div>
+      <div class="feature">
+        <img src="./images/down_diversification.svg" alt="Diversification alimentaire">
+        <h3>Diversification alimentaire</h3>
+        <p>Suivez les aliments proposés à votre enfant au fil de sa découverte des saveurs.</p>
+        <span class="soon">Bientôt disponible</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRANSPARENCE -->
+  <section class="section">
+    <h2 class="section-title">Une totale transparence</h2>
+    <div class="github">
+      <a class="link" href="https://github.com/Bear80140/charlie-app" target="_blank">📂 Code source</a>
+      <a class="link" href="https://github.com/Bear80140/charlie-app#readme" target="_blank">📖 README</a>
+      <a class="link" href="https://github.com/Bear80140/charlie-app/blob/main/LICENSE" target="_blank">⚖️ Licence MIT</a>
+      <a class="link" href="https://github.com/Bear80140/charlie-app/issues" target="_blank">💬 Signaler un problème</a>
+    </div>
+  </section>
 
   <div class="notice">
-    ⚠️ Projet personnel et gratuit, développé sur mon temps libre avec l'aide d'outils d'IA. Ce n'est <strong>pas un dispositif médical</strong> et je ne peux garantir ni disponibilité ni assistance continue. La licence MIT signifie que le code est fourni "tel quel", sans garantie — libre à vous de l'utiliser, de le copier ou de l'adapter.
+    <strong>⚠️ Projet personnel.</strong> Charlie App est développée sur mon temps libre avec l'aide
+    d'outils d'IA. Elle ne constitue pas un dispositif médical et est distribuée librement sous
+    licence MIT, sans garantie ni assistance continue.
   </div>
 
-  <a class="cta" href="app.html">Commencer avec Charlie App →</a>
+  <section class="section" style="text-align:center;">
+    <a href="app.html" class="btn btn-primary">Commencer avec Charlie App →</a>
+  </section>
 
-  <div class="footer-note">Distribué librement sous licence MIT — Bear80140</div>
+  <div class="footer">Charlie App • Licence MIT • Bear80140</div>
 
 </div>
+
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(function(){});
