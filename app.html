@@ -335,10 +335,23 @@ class="home-image"
       <div class="module-content">
         <div>
           <div class="section-label">Raccourcis</div>
-          <div class="shortcuts">
-            <div class="shortcut-card vitd"><div class="sc-icon">☀️</div><div class="sc-body"><div class="sc-name">Vitamine D</div><div class="sc-detail">Zymad · 1 goutte</div><div class="sc-last" id="last-vitd">Pas encore aujourd'hui</div></div><button class="sc-action vitd" onclick="quickAddSoin('vitd')">Donner</button></div>
-            <div class="shortcut-card doli"><div class="sc-icon">🌡️</div><div class="sc-body"><div class="sc-name">Doliprane</div><div class="sc-detail">Paracétamol · 2,5 ml</div><div class="sc-last" id="last-doli">Pas encore aujourd'hui</div></div><button class="sc-action doli" onclick="quickAddSoin('doli')">Donner</button></div>
-            <div class="shortcut-card bain"><div class="sc-icon">🛁</div><div class="sc-body"><div class="sc-name">Bain</div><div class="sc-detail">Toilette complète</div><div class="sc-last" id="last-bain">Pas encore aujourd'hui</div></div><button class="sc-action bain" onclick="quickAddSoin('bain')">Enregistrer</button></div>
+          <div class="shortcuts" id="shortcuts-list"></div>
+          <button class="btn-dashed" style="margin-top:8px" onclick="openNewRaccourci()">＋ Nouveau raccourci</button>
+          <div class="manual-form" id="raccourci-form" style="margin-top:10px">
+            <div class="form-title" id="raccourci-form-title">Nouveau raccourci</div>
+            <div class="form-row">
+              <div class="form-group"><div class="form-label">Emoji</div><input type="text" id="raccourci-emoji" placeholder="☀️" maxlength="4"></div>
+              <div class="form-group"><div class="form-label">Nom</div><input type="text" id="raccourci-name" placeholder="ex: Vitamine D"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><div class="form-label">Dose / détail</div><input type="text" id="raccourci-dose" placeholder="ex: Zymad · 1 goutte"></div>
+              <div class="form-group"><div class="form-label">Catégorie</div><select id="raccourci-category"><option value="med">💊 Médicament</option><option value="autre">✏️ Autre / soin</option></select></div>
+            </div>
+            <div class="form-group"><div class="form-label">Note (optionnel)</div><input type="text" id="raccourci-note" placeholder="optionnel"></div>
+            <div class="save-row">
+              <button class="btn-save" onclick="saveRaccourci()">✓ Enregistrer</button>
+              <button class="btn-secondary" onclick="cancelRaccourciForm()">Annuler</button>
+            </div>
           </div>
         </div>
         <div>
@@ -709,6 +722,11 @@ onclick="removeBabyPicture()"
           <button class="btn-save" style="margin-top:10px" onclick="saveRdvSettings()">✓ Sauvegarder</button>
         </div>
         <div class="chart-card">
+          <div class="form-title">🔔 Alertes & rappels</div>
+          <div style="font-size:12px;color:#888780;margin:6px 0 10px">Affiche un badge "en retard" sur le raccourci concerné dans l'onglet Soins. Aucune notification push, juste un rappel visuel dans l'app.</div>
+          <div id="alerts-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+        <div class="chart-card">
           <div class="form-title">🔄 Sync & Sauvegarde</div>
           <div style="font-size:13px;color:#888780;margin:8px 0 12px">Les données sont synchronisées en temps réel avec Firebase. Votre femme et vous partagez les mêmes données automatiquement.</div>
           <div style="display:flex;gap:8px;flex-direction:column">
@@ -798,7 +816,7 @@ import { getSavedFbConfig, getBabyLocal, setBabyLocal, MY_NAME_KEY, isOnboarding
 // ═══════════════════════════════════════════════════════════════
 // VERSION DE L'APP
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.1';
 
 // ── CONFIG FIREBASE (chargée depuis shared.js ; démarrage réel de la connexion, propre à cette page) ──
 let fbApp = null;
@@ -838,7 +856,7 @@ function showSync(state) {
 }
 
 // ── BASE DE DONNÉES LOCALE (cache) ────────────────────────
-let DB = { tetees:[], couches:[], soins:[], poids:[], routine:[], siestes:[], vomis:[], temperatures:[], bilans:[] };
+let DB = { tetees:[], couches:[], soins:[], poids:[], routine:[], siestes:[], vomis:[], temperatures:[], bilans:[], soinsConfig:[] };
 
 // Note : prénom/naissance du bébé (getBabyLocal/setBabyLocal) et clés associées sont importés de shared.js
 
@@ -1056,8 +1074,10 @@ window.navigate = function(page, el) {
   document.getElementById('topbar-title').textContent = page==='home' ? getGreetingText() : (PAGE_TITLES[page]||page);
   if(page==='home') updateHome();
   if(page==='tetees') { renderTeteeHistory(); renderYesterdayTetees(); }
+  if(page==='soins') { renderShortcuts(); }
   if(page==='routine') { renderRoutineToday(); renderYesterdayRoutine(); renderSiestesHistory(); }
   if(page==='malade') { renderVomisHistory(); renderTemperaturesHistory(); renderSellesHistory(); renderBilanToday(); renderBilansHistory(); }
+  if(page==='reglages') { renderAlertsSettings(); }
   if(page==='diagrammes') renderDiagrammes();
 };
 
@@ -1722,18 +1742,206 @@ function renderCoucheHistory() {
 }
 
 // ── SOINS ─────────────────────────────────────────────────
-const SHORTCUTS={
-  vitd:{name:'Vitamine D',detail:'Zymad · 1 goutte',emoji:'☀️',color:'#F5CB5C'},
-  doli:{name:'Doliprane',detail:'Paracétamol · 2,5 ml',emoji:'🌡️',color:'#F4A261'},
-  bain:{name:'Bain',detail:'Toilette complète',emoji:'🛁',color:'#74C2E1'},
-};
 let selectedSoinType='med';
 window.selectSoinType = function(el,type){ document.querySelectorAll('.pill').forEach(p=>p.classList.remove('selected')); el.classList.add('selected'); selectedSoinType=type; };
 
-window.quickAddSoin = async function(key) {
-  const s=SHORTCUTS[key], now=Date.now();
-  await fbSet('soins',{id:now,key,name:s.name,detail:s.detail,emoji:s.emoji,color:s.color,ts:now,ts_num:now});
-  showToast(s.emoji+' '+s.name+' enregistré(e)');
+// ── RACCOURCIS SOINS (config dynamique, Firestore, v3.1) ──
+const DEFAULT_SOINS_CONFIG = [
+  { id:'vitd', emoji:'☀️', name:'Vitamine D', dose:'Zymad · 1 goutte', note:'', category:'med', order:0, alert:{enabled:false,mode:'daily',time:'20:00',days:[]} },
+  { id:'doli', emoji:'🌡️', name:'Doliprane', dose:'Paracétamol · 2,5 ml', note:'', category:'med', order:1, alert:{enabled:false,mode:'daily',time:'',days:[]} },
+  { id:'bain', emoji:'🛁', name:'Bain', dose:'Toilette complète', note:'', category:'autre', order:2, alert:{enabled:false,mode:'weekly',time:'',days:[]} }
+];
+const DAY_KEYS = ['lun','mar','mer','jeu','ven','sam','dim'];
+const DAY_LABELS = { lun:'Lun', mar:'Mar', mer:'Mer', jeu:'Jeu', ven:'Ven', sam:'Sam', dim:'Dim' };
+
+function listenSoinsConfig() {
+  onSnapshot(collection(db, 'soins_config'), snap => {
+    DB.soinsConfig = snap.docs.map(d => d.data()).sort((a,b)=>(a.order||0)-(b.order||0));
+    saveLocal();
+    if (!snap.docs.length && !localStorage.getItem('charlie_soins_seeded')) {
+      localStorage.setItem('charlie_soins_seeded','1');
+      DEFAULT_SOINS_CONFIG.forEach(c => fbSet('soins_config', c));
+    }
+    renderShortcuts();
+    renderAlertsSettings();
+    updateHome();
+  }, ()=>showSync('error'));
+}
+
+function isRaccourciLate(cfg) {
+  if (!cfg.alert || !cfg.alert.enabled) return false;
+  const now = new Date();
+  const last = DB.soins.filter(s=>s.key===cfg.id).sort((a,b)=>b.ts-a.ts)[0];
+  const doneToday = last && new Date(last.ts).toDateString() === now.toDateString();
+  if (cfg.alert.mode === 'daily') {
+    if (!cfg.alert.time) return false;
+    const [h,m] = cfg.alert.time.split(':').map(Number);
+    const due = new Date(); due.setHours(h,m,0,0);
+    return now >= due && !doneToday;
+  }
+  if (cfg.alert.mode === 'weekly') {
+    const todayKey = DAY_KEYS[(now.getDay()+6)%7];
+    if (!cfg.alert.days || !cfg.alert.days.includes(todayKey)) return false;
+    return !doneToday;
+  }
+  return false;
+}
+
+function renderShortcuts() {
+  const list = document.getElementById('shortcuts-list');
+  if (!list) return;
+  if (!DB.soinsConfig.length) { list.innerHTML = '<div class="empty-state">Aucun raccourci pour l\'instant. Ajoutez-en un ci-dessous.</div>'; return; }
+  list.innerHTML = DB.soinsConfig.map(cfg => {
+    const last = DB.soins.filter(s=>s.key===cfg.id).sort((a,b)=>b.ts-a.ts)[0];
+    const lastLabel = last && new Date(last.ts).toDateString()===todayStr() ? 'Dernière fois : '+fmtT(last.ts) : "Pas encore aujourd'hui";
+    const badge = isRaccourciLate(cfg) ? `<span style="font-size:10px;font-weight:600;color:#7D3A08;background:#FEF0E6;border:1px solid #F4A261;border-radius:20px;padding:2px 8px;margin-left:6px">⏰ en retard</span>` : '';
+    return `<div class="shortcut-card" style="border-left:3px solid #EF9F27">
+      <div class="sc-icon">${cfg.emoji}</div>
+      <div class="sc-body">
+        <div class="sc-name">${cfg.name}${badge}</div>
+        <div class="sc-detail">${cfg.dose||''}</div>
+        <div class="sc-last">${lastLabel}</div>
+      </div>
+      <button class="hi-edit" onclick="editRaccourci('${cfg.id}')" title="Modifier">✎</button>
+      <button class="hi-delete" onclick="deleteRaccourci('${cfg.id}')" title="Supprimer">✕</button>
+      <button class="sc-action vitd" onclick="quickAddRaccourci('${cfg.id}')">${cfg.category==='med'?'Donner':'Enregistrer'}</button>
+    </div>`;
+  }).join('');
+}
+
+window.quickAddRaccourci = async function(id) {
+  const cfg = DB.soinsConfig.find(c=>c.id===id);
+  if (!cfg) return;
+  const now = Date.now();
+  await fbSet('soins', {id:now, key:cfg.id, name:cfg.name, detail:cfg.dose, emoji:cfg.emoji, color:'#EF9F27', ts:now, ts_num:now});
+  showToast(cfg.emoji+' '+cfg.name+' enregistré(e)');
+};
+
+let editingRaccourciId = null;
+
+window.openNewRaccourci = function() {
+  editingRaccourciId = null;
+  document.getElementById('raccourci-form-title').textContent = 'Nouveau raccourci';
+  document.getElementById('raccourci-emoji').value = '';
+  document.getElementById('raccourci-name').value = '';
+  document.getElementById('raccourci-dose').value = '';
+  document.getElementById('raccourci-note').value = '';
+  document.getElementById('raccourci-category').value = 'med';
+  document.getElementById('raccourci-form').classList.add('open');
+};
+
+window.editRaccourci = function(id) {
+  const cfg = DB.soinsConfig.find(c=>c.id===id);
+  if (!cfg) return;
+  editingRaccourciId = id;
+  document.getElementById('raccourci-form-title').textContent = "Modifier le raccourci";
+  document.getElementById('raccourci-emoji').value = cfg.emoji;
+  document.getElementById('raccourci-name').value = cfg.name;
+  document.getElementById('raccourci-dose').value = cfg.dose||'';
+  document.getElementById('raccourci-note').value = cfg.note||'';
+  document.getElementById('raccourci-category').value = cfg.category||'med';
+  const form = document.getElementById('raccourci-form');
+  form.classList.add('open');
+  form.scrollIntoView({behavior:'smooth',block:'center'});
+};
+
+window.cancelRaccourciForm = function() {
+  document.getElementById('raccourci-form').classList.remove('open');
+  editingRaccourciId = null;
+};
+
+window.saveRaccourci = async function() {
+  const emoji = document.getElementById('raccourci-emoji').value.trim();
+  const name = document.getElementById('raccourci-name').value.trim();
+  const dose = document.getElementById('raccourci-dose').value.trim();
+  const note = document.getElementById('raccourci-note').value.trim();
+  const category = document.getElementById('raccourci-category').value;
+  if (!emoji || !name) { showToast('⚠️ Emoji et nom requis'); return; }
+  const id = editingRaccourciId || ('rc_'+Date.now());
+  const existing = DB.soinsConfig.find(c=>c.id===id);
+  const entry = {
+    id, emoji, name, dose, note, category,
+    order: existing ? (existing.order ?? DB.soinsConfig.length) : DB.soinsConfig.length,
+    alert: existing ? existing.alert : { enabled:false, mode:'daily', time:'', days:[] }
+  };
+  document.getElementById('raccourci-form').classList.remove('open');
+  const wasEditing = !!existing;
+  await fbSet('soins_config', entry);
+  showToast(wasEditing ? '✓ Raccourci modifié' : '✓ Raccourci ajouté');
+  editingRaccourciId = null;
+};
+
+window.deleteRaccourci = async function(id) {
+  await fbDelete('soins_config', id);
+  showToast('✓ Raccourci supprimé');
+};
+
+// ── ALERTES & RAPPELS (Réglages, v3.1) ────────────────────
+function renderAlertsSettings() {
+  const el = document.getElementById('alerts-list');
+  if (!el) return;
+  if (!DB.soinsConfig.length) { el.innerHTML = '<div class="empty-state">Ajoutez un raccourci dans l\'onglet Soins pour configurer une alerte</div>'; return; }
+  el.innerHTML = DB.soinsConfig.map(cfg => {
+    const alert = cfg.alert || {enabled:false,mode:'daily',time:'',days:[]};
+    const enabled = !!alert.enabled;
+    const mode = alert.mode || 'daily';
+    const time = alert.time || '';
+    const days = alert.days || [];
+    return `<div style="background:#fff;border:1px solid #EDE9E3;border-radius:14px;padding:12px 14px;${enabled?'':'opacity:0.6'}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">${cfg.emoji}</span><span style="font-size:14px;font-weight:600;color:#2C2C2A">${cfg.name}</span></div>
+        <label style="position:relative;display:inline-block;width:38px;height:22px;cursor:pointer">
+          <input type="checkbox" ${enabled?'checked':''} onchange="toggleAlertEnabled('${cfg.id}',this.checked)" style="position:absolute;opacity:0;width:38px;height:22px;margin:0;cursor:pointer">
+          <span style="position:absolute;inset:0;background:${enabled?'#EF9F27':'#EDE9E3'};border-radius:20px;pointer-events:none"></span>
+          <span style="position:absolute;top:2px;${enabled?'right':'left'}:2px;width:18px;height:18px;background:#fff;border-radius:50%;pointer-events:none"></span>
+        </label>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <select onchange="setAlertMode('${cfg.id}',this.value)">
+          <option value="daily" ${mode==='daily'?'selected':''}>Tous les jours</option>
+          <option value="weekly" ${mode==='weekly'?'selected':''}>Jours précis</option>
+        </select>
+        ${mode==='daily'
+          ? `<input type="time" value="${time}" onchange="setAlertTime('${cfg.id}',this.value)">`
+          : `<select onchange="if(this.value){toggleAlertDay('${cfg.id}',this.value);this.value='';}"><option value="">＋ jour</option>${DAY_KEYS.map(d=>`<option value="${d}">${DAY_LABELS[d]}</option>`).join('')}</select>`
+        }
+      </div>
+      ${mode==='weekly' ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${days.length?days.map(d=>`<span class="pill selected" style="cursor:pointer" onclick="removeAlertDay('${cfg.id}','${d}')">${DAY_LABELS[d]} ✕</span>`).join(''):'<span style="font-size:11px;color:#B4B2A9">Aucun jour sélectionné</span>'}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function patchAlert(id, patch) {
+  const cfg = DB.soinsConfig.find(c=>c.id===id);
+  if (!cfg) return null;
+  cfg.alert = Object.assign({enabled:false,mode:'daily',time:'',days:[]}, cfg.alert, patch);
+  return cfg;
+}
+
+window.toggleAlertEnabled = async function(id, checked) {
+  const cfg = patchAlert(id, {enabled:checked}); if (!cfg) return;
+  await fbSet('soins_config', cfg);
+};
+window.setAlertMode = async function(id, mode) {
+  const cfg = patchAlert(id, {mode}); if (!cfg) return;
+  await fbSet('soins_config', cfg);
+};
+window.setAlertTime = async function(id, time) {
+  const cfg = patchAlert(id, {time}); if (!cfg) return;
+  await fbSet('soins_config', cfg);
+};
+window.toggleAlertDay = async function(id, day) {
+  const cfg = DB.soinsConfig.find(c=>c.id===id); if (!cfg) return;
+  const days = new Set((cfg.alert&&cfg.alert.days)||[]);
+  days.add(day);
+  patchAlert(id, {days:Array.from(days)});
+  await fbSet('soins_config', cfg);
+};
+window.removeAlertDay = async function(id, day) {
+  const cfg = DB.soinsConfig.find(c=>c.id===id); if (!cfg) return;
+  const days = ((cfg.alert&&cfg.alert.days)||[]).filter(d=>d!==day);
+  patchAlert(id, {days});
+  await fbSet('soins_config', cfg);
 };
 
 window.toggleAddSoin = function() {
@@ -1753,7 +1961,7 @@ window.addSoin = async function() {
 };
 
 function updateLastLabels_soin() {
-  ['vitd','doli','bain'].forEach(key=>{ const last=DB.soins.find(s=>s.key===key&&new Date(s.ts).toDateString()===todayStr()); document.getElementById('last-'+key).textContent=last?'Dernière fois : '+fmtT(last.ts):"Pas encore aujourd'hui"; });
+  renderShortcuts();
 }
 window.deleteSoin = async function(id) { await fbDelete('soins',id); };
 function renderSoinHistory() {
@@ -2356,6 +2564,8 @@ function bootApp() {
   listenCollection('tetees','tetees', ()=>{ renderTeteeHistory(); renderYesterdayTetees(); updateLastLabels_tetee(); updateHome(); });
   listenCollection('couches','couches', ()=>{ updateCoucheCounters(); updateLastLabels_couche(); renderCoucheHistory(); updateHome(); });
   listenCollection('soins','soins', ()=>{ updateLastLabels_soin(); renderSoinHistory(); updateHome(); });
+  listenSoinsConfig();
+  setInterval(()=>{ renderShortcuts(); }, 5*60*1000);
   listenCollection('routine','routine', ()=>{ renderRoutineToday(); renderYesterdayRoutine(); updateHome(); });
   listenCollection('siestes','siestes', ()=>{ renderSiestesHistory(); renderYesterdayRoutine(); updateHome(); });
   listenCollection('vomis','vomis', ()=>{ renderVomisHistory(); updateHome(); });
