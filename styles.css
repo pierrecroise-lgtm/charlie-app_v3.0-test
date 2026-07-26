@@ -464,11 +464,19 @@ input[type="text"], input[type="time"], input[type="number"], input[type="date"]
 .diversif-recap-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
 .diversif-empty-col { font-size: 11px; color: #B4B2A9; padding: 6px 0; }
 .diversif-food-icon-sm { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
-.diversif-aliment-select-row {
-  display: flex; align-items: center; gap: 8px; border: 1px solid #EDE9E3;
-  border-radius: 8px; padding: 6px 10px; background: #fff;
+.diversif-aliment-picker-trigger {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 10px;
+  border-radius: 8px; border: 1px solid #EDE9E3; background: #fff; font-size: 14px; color: #2C2C2A; cursor: pointer;
 }
-.diversif-aliment-select-row select { border: none; flex: 1; padding: 4px 0; font-size: 14px; background: transparent; color: #2C2C2A; }
+.diversif-aliment-picker { margin-top: 8px; border: 1px solid #EDE9E3; border-radius: 12px; padding: 10px; background: #fff; }
+.diversif-aliment-picker input[type="text"] { width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid #EDE9E3; font-size: 14px; }
+.diversif-aliment-picker-category { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #B4B2A9; margin: 10px 0 6px; }
+.diversif-aliment-picker-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+.diversif-aliment-picker-item {
+  display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 12px; border: 1px solid #EDE9E3;
+  background: #fff; cursor: pointer; font-size: 13px; font-weight: 500; color: #2C2C2A;
+}
+.diversif-aliment-picker-item.selected { background: #FAEEDA; border-color: #EF9F27; color: #633806; font-weight: 700; }
 .diversif-appreciation-row { display: flex; gap: 6px; }
 .diversif-appreciation-btn {
   flex: 1; text-align: center; padding: 8px; border-radius: 7px; background: #F1EFE8;
