@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="pomme" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #E24B4A;
+        stroke: #000;
+        stroke-miterlimit: 10;
+        stroke-width: .5px;
+      }
+      .cls-2 {
+        fill: #97C459;
+        stroke: #000;
+        stroke-miterlimit: 10;
+        stroke-width: .5px;
+      }
+      .cls-3 {
+        fill: none;
+        stroke: #000;
+        stroke-linecap: round;
+        stroke-miterlimit: 10;
+        stroke-width: .8px;
+      }
+    </style>
+  </defs>
+  <path class="cls-3" d="M24,17 L24,12"/>
+  <path class="cls-2" d="M24,13 C26,10 30,11 30,14 C27,15 25,14 24,13 Z"/>
+  <path class="cls-1" d="M24,17 C15,17 12,25 13,31 C14,38 19,41 24,41 C29,41 34,38 35,31 C36,25 33,17 24,17 Z M24,17 C22,17 21,15.5 21,14.5"/>
+</svg>

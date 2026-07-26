@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="poulet" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #E3B28A;
+        stroke: #000;
+        stroke-miterlimit: 10;
+        stroke-width: .5px;
+      }
+      .cls-2 {
+        fill: #FDFBF7;
+        stroke: #000;
+        stroke-miterlimit: 10;
+        stroke-width: .5px;
+      }
+    </style>
+  </defs>
+  <path class="cls-2" d="M25,29 C24,32 23.5,36 24.5,39.5 C24.7,40.3 26.3,40.3 26.5,39.5 C27.5,36 27,32 26,29 Z"/>
+  <path class="cls-1" d="M17,15 C13,20 13,26 18,30 C23,34 30,34 33,29 C36,24 34,17 29,14 C25,11.5 20,11 17,15 Z"/>
+</svg>
