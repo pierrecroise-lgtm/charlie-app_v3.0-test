@@ -687,9 +687,13 @@ class="home-image"
 
             <div class="form-group">
               <div class="form-label">Aliment</div>
-              <div class="diversif-aliment-select-row">
-                <img id="diversif-aliment-icon-preview" class="diversif-food-icon-sm" src="" alt="" style="display:none">
-                <select id="diversif-aliment-select" onchange="window.onDiversifAlimentChange()"></select>
+              <button type="button" class="diversif-aliment-picker-trigger" id="diversif-aliment-trigger" onclick="window.toggleDiversifAlimentPicker()">
+                <span id="diversif-aliment-trigger-label">Choisir un aliment</span>
+                <span style="margin-left:auto;color:#888780">▾</span>
+              </button>
+              <div class="diversif-aliment-picker" id="diversif-aliment-picker" style="display:none">
+                <input type="text" id="diversif-aliment-search" placeholder="Rechercher..." oninput="window.renderDiversifAlimentPicker()">
+                <div id="diversif-aliment-picker-grid" style="max-height:320px;overflow-y:auto"></div>
               </div>
             </div>
 
@@ -1151,7 +1155,6 @@ window.navigate = function(page, el) {
   if(page==='diversification') {
     const heureEl = document.getElementById('diversif-heure');
     if (heureEl && !heureEl.value) { const n=new Date(); heureEl.value = pad(n.getHours())+':'+pad(n.getMinutes()); }
-    populateDiversifAlimentSelect();
     renderDiversifHistory();
     renderDiversifRecap();
     renderDiversifListeAliments();
@@ -2459,7 +2462,7 @@ function listenAlimentsConfig() {
       localStorage.setItem('charlie_aliments_seeded', '1');
       DEFAULT_ALIMENTS_CONFIG.forEach(c => fbSet('aliments_config', c));
     }
-    populateDiversifAlimentSelect();
+    refreshDiversifPickerIfOpen();
     renderDiversifRecap();
     renderDiversifListeAliments();
   }, () => showSync('error'));
@@ -2475,38 +2478,54 @@ function listenDiversification() {
   }, () => showSync('error'));
 }
 
-function populateDiversifAlimentSelect() {
-  const sel = document.getElementById('diversif-aliment-select');
-  if (!sel) return;
-  const prevVal = sel.value;
+let diversifSelectedAlimentId = null;
+
+function renderDiversifAlimentPicker() {
+  const grid = document.getElementById('diversif-aliment-picker-grid');
+  if (!grid) return;
+  const searchEl = document.getElementById('diversif-aliment-search');
+  const q = (searchEl ? searchEl.value : '').trim().toLowerCase();
   const byCategorie = {};
-  DB.aliments_config.forEach(c => { (byCategorie[c.categorie] = byCategorie[c.categorie] || []).push(c); });
+  DB.aliments_config.forEach(c => {
+    if (q && !c.nom.toLowerCase().includes(q)) return;
+    (byCategorie[c.categorie] = byCategorie[c.categorie] || []).push(c);
+  });
   const order = ['legume','fruit','feculent','proteine','autre'];
   let html = '';
   order.forEach(cat => {
     const items = byCategorie[cat];
     if (!items || !items.length) return;
-    html += `<optgroup label="${CATEGORIE_LABELS[cat]}">`;
-    items.forEach(c => { html += `<option value="${c.id}">${c.emoji||''} ${c.nom}</option>`; });
-    html += `</optgroup>`;
+    html += `<div class="diversif-aliment-picker-category">${CATEGORIE_LABELS[cat]}</div><div class="diversif-aliment-picker-grid">`;
+    items.forEach(c => {
+      const sel = c.id === diversifSelectedAlimentId ? ' selected' : '';
+      html += `<div class="diversif-aliment-picker-item${sel}" onclick="window.selectDiversifAliment('${c.id}')">${diversifIconOrEmoji(c,22)}<span>${c.nom}</span></div>`;
+    });
+    html += `</div>`;
   });
-  sel.innerHTML = html;
-  if (prevVal && DB.aliments_config.some(c => c.id === prevVal)) sel.value = prevVal;
-  window.onDiversifAlimentChange();
+  grid.innerHTML = html || '<div class="empty-state">Aucun résultat</div>';
+}
+window.renderDiversifAlimentPicker = renderDiversifAlimentPicker;
+
+function refreshDiversifPickerIfOpen() {
+  const panel = document.getElementById('diversif-aliment-picker');
+  if (panel && panel.style.display === 'block') renderDiversifAlimentPicker();
 }
 
-window.onDiversifAlimentChange = function() {
-  const sel = document.getElementById('diversif-aliment-select');
-  const preview = document.getElementById('diversif-aliment-icon-preview');
-  if (!sel || !preview) return;
-  const cfg = alimentConfigById(sel.value);
-  const src = alimentIconSrc(cfg);
-  if (src) {
-    preview.src = src;
-    preview.style.display = 'block';
-    preview.onerror = () => { preview.style.display = 'none'; };
-  } else {
-    preview.style.display = 'none';
+window.selectDiversifAliment = function(id) {
+  diversifSelectedAlimentId = id;
+  const cfg = alimentConfigById(id);
+  document.getElementById('diversif-aliment-trigger-label').textContent = cfg ? cfg.nom : 'Choisir un aliment';
+  document.getElementById('diversif-aliment-picker').style.display = 'none';
+};
+
+window.toggleDiversifAlimentPicker = function() {
+  const panel = document.getElementById('diversif-aliment-picker');
+  const isHidden = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    const searchEl = document.getElementById('diversif-aliment-search');
+    if (searchEl) searchEl.value = '';
+    renderDiversifAlimentPicker();
   }
 };
 
@@ -2524,6 +2543,7 @@ window.saveDiversifNewAliment = async function() {
   document.getElementById('diversif-new-aliment-emoji').value = '';
   document.getElementById('diversif-new-aliment-nom').value = '';
   await fbSet('aliments_config', entry);
+  refreshDiversifPickerIfOpen();
   showToast('✓ Aliment ajouté');
 };
 
@@ -2535,8 +2555,7 @@ window.selectDiversifAppreciation = function(el, val) {
 };
 
 window.saveRepasDiversif = async function() {
-  const sel = document.getElementById('diversif-aliment-select');
-  const alimentId = sel ? sel.value : null;
+  const alimentId = diversifSelectedAlimentId;
   const quantiteRaw = document.getElementById('diversif-quantite').value;
   const heure = document.getElementById('diversif-heure').value;
   if (!alimentId) { showToast('⚠️ Choisissez un aliment'); return; }
