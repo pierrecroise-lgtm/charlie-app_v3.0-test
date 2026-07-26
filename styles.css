@@ -455,6 +455,29 @@ input[type="text"], input[type="time"], input[type="number"], input[type="date"]
 .routine-status-text { font-size: 14px; font-weight: 600; color: #2C2C2A; }
 .routine-yesterday-line { font-size: 13px; color: #444441; }
 
+/* ── DIVERSIFICATION ── */
+.diversif-header-img { display: flex; justify-content: center; margin-bottom: 2px; }
+.diversif-header-img img { width: 90px; height: 90px; object-fit: contain; }
+.diversif-recap-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+.diversif-recap-col { background: #fff; border: 1px solid #EDE9E3; border-radius: 14px; padding: 12px; }
+.diversif-recap-title { font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+.diversif-recap-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+.diversif-empty-col { font-size: 11px; color: #B4B2A9; padding: 6px 0; }
+.diversif-food-icon-sm { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
+.diversif-aliment-select-row {
+  display: flex; align-items: center; gap: 8px; border: 1px solid #EDE9E3;
+  border-radius: 8px; padding: 6px 10px; background: #fff;
+}
+.diversif-aliment-select-row select { border: none; flex: 1; padding: 4px 0; font-size: 14px; background: transparent; color: #2C2C2A; }
+.diversif-appreciation-row { display: flex; gap: 6px; }
+.diversif-appreciation-btn {
+  flex: 1; text-align: center; padding: 8px; border-radius: 7px; background: #F1EFE8;
+  color: #5F5E5A; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid transparent;
+}
+.diversif-appreciation-btn.selected.aime    { background: #EBF5E6; border-color: #7EB86A; color: #2D5E1E; }
+.diversif-appreciation-btn.selected.rejete  { background: #FEF0E6; border-color: #F4A261; color: #7D3A08; }
+.diversif-appreciation-btn.selected.neutre  { background: #F1EFE8; border-color: #B4B2A9; color: #444441; }
+
 /* ── TOAST ── */
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
