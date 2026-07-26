@@ -659,13 +659,82 @@ class="home-image"
       </div>
     </div>
 
-    <!-- DIVERSIFICATION (en construction) -->
+    <!-- DIVERSIFICATION -->
     <div class="page" id="page-diversification">
       <div class="module-content">
-        <div class="placeholder-card">
-          <div class="placeholder-emoji">🚧</div>
-          <div class="placeholder-text">Cette rubrique est en cours de construction.<br>Elle permettra bientôt de suivre la diversification alimentaire de Charlie.</div>
+
+        <div class="diversif-header-img">
+          <img src="./images/down_diversification.svg" alt="Diversification">
         </div>
+
+        <div>
+          <div class="section-label">Récapitulatif</div>
+          <div class="diversif-recap-grid">
+            <div class="diversif-recap-col">
+              <div class="diversif-recap-title" style="color:#2D5E1E">🟢 Aimés</div>
+              <div id="diversif-recap-aimes"></div>
+            </div>
+            <div class="diversif-recap-col">
+              <div class="diversif-recap-title" style="color:#7D3A08">🔴 Rejetés</div>
+              <div id="diversif-recap-rejetes"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="form-title">Nouveau repas</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+
+            <div class="form-group">
+              <div class="form-label">Aliment</div>
+              <div class="diversif-aliment-select-row">
+                <img id="diversif-aliment-icon-preview" class="diversif-food-icon-sm" src="" alt="" style="display:none">
+                <select id="diversif-aliment-select" onchange="window.onDiversifAlimentChange()"></select>
+              </div>
+            </div>
+
+            <button class="btn-dashed" type="button" onclick="window.toggleDiversifNewAliment()">＋ Ajouter un nouvel aliment</button>
+            <div class="manual-form" id="diversif-new-aliment-form">
+              <div class="form-row">
+                <div class="form-group"><div class="form-label">Emoji</div><input type="text" id="diversif-new-aliment-emoji" placeholder="🍽️" maxlength="4"></div>
+                <div class="form-group"><div class="form-label">Nom</div><input type="text" id="diversif-new-aliment-nom" placeholder="ex: Courge spaghetti"></div>
+              </div>
+              <div class="save-row" style="margin-top:10px">
+                <button class="btn-save" onclick="window.saveDiversifNewAliment()">✓ Ajouter</button>
+                <button class="btn-secondary" onclick="window.toggleDiversifNewAliment()">Annuler</button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group"><div class="form-label">Quantité</div><input type="number" id="diversif-quantite" min="0" step="0.5" placeholder="ex: 2"></div>
+              <div class="form-group"><div class="form-label">Unité</div><div style="padding:9px 10px;font-size:14px;color:#888780">cuillère(s)</div></div>
+            </div>
+
+            <div class="form-group"><div class="form-label">Heure</div><input type="time" id="diversif-heure"></div>
+
+            <div class="form-group">
+              <div class="form-label">Appréciation</div>
+              <div class="diversif-appreciation-row">
+                <div class="diversif-appreciation-btn" onclick="window.selectDiversifAppreciation(this,'aime')">😋 Aimé</div>
+                <div class="diversif-appreciation-btn" onclick="window.selectDiversifAppreciation(this,'neutre')">😐 Neutre</div>
+                <div class="diversif-appreciation-btn" onclick="window.selectDiversifAppreciation(this,'rejete')">😖 Rejeté</div>
+              </div>
+            </div>
+
+            <button class="btn-save" onclick="window.saveRepasDiversif()">✓ Enregistrer le repas</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Historique du jour</div>
+          <div class="history-list" id="history-diversification"><div class="empty-state">Aucun repas enregistré aujourd'hui</div></div>
+        </div>
+
+        <div>
+          <div class="section-label">Tous les aliments testés</div>
+          <div class="history-list" id="diversif-liste-aliments"></div>
+        </div>
+
       </div>
     </div>
 
@@ -816,7 +885,7 @@ import { getSavedFbConfig, getBabyLocal, setBabyLocal, MY_NAME_KEY, isOnboarding
 // ═══════════════════════════════════════════════════════════════
 // VERSION DE L'APP
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = '3.1';
+const APP_VERSION = '3.2';
 
 // ── CONFIG FIREBASE (chargée depuis shared.js ; démarrage réel de la connexion, propre à cette page) ──
 let fbApp = null;
@@ -856,7 +925,7 @@ function showSync(state) {
 }
 
 // ── BASE DE DONNÉES LOCALE (cache) ────────────────────────
-let DB = { tetees:[], couches:[], soins:[], poids:[], routine:[], siestes:[], vomis:[], temperatures:[], bilans:[], soinsConfig:[] };
+let DB = { tetees:[], couches:[], soins:[], poids:[], routine:[], siestes:[], vomis:[], temperatures:[], bilans:[], soinsConfig:[], aliments_config:[], diversification:[] };
 
 // Note : prénom/naissance du bébé (getBabyLocal/setBabyLocal) et clés associées sont importés de shared.js
 
@@ -1079,6 +1148,14 @@ window.navigate = function(page, el) {
   if(page==='malade') { renderVomisHistory(); renderTemperaturesHistory(); renderSellesHistory(); renderBilanToday(); renderBilansHistory(); }
   if(page==='reglages') { renderAlertsSettings(); }
   if(page==='diagrammes') renderDiagrammes();
+  if(page==='diversification') {
+    const heureEl = document.getElementById('diversif-heure');
+    if (heureEl && !heureEl.value) { const n=new Date(); heureEl.value = pad(n.getHours())+':'+pad(n.getMinutes()); }
+    populateDiversifAlimentSelect();
+    renderDiversifHistory();
+    renderDiversifRecap();
+    renderDiversifListeAliments();
+  }
 };
 
 // ── TÉTÉES ────────────────────────────────────────────────
@@ -2301,6 +2378,259 @@ function renderBilansHistory() {
   }).join('');
 }
 
+// ── DIVERSIFICATION ───────────────────────────────────────
+// NB : contrairement aux autres collections (fenêtre glissante de 30 jours), la diversification
+// est écoutée SANS filtre de date (comme poids), car les tentatives sur un même aliment sont
+// souvent espacées de plusieurs semaines et doivent rester comptabilisées dans le récap.
+const DEFAULT_ALIMENTS_CONFIG = [
+  {id:'carotte',nom:'Carotte',emoji:'🥕',categorie:'legume',order:0},
+  {id:'courgette',nom:'Courgette',emoji:'🥒',categorie:'legume',order:1},
+  {id:'potiron',nom:'Potiron',emoji:'🎃',categorie:'legume',order:2},
+  {id:'haricots_verts',nom:'Haricots verts',emoji:'🫛',categorie:'legume',order:3},
+  {id:'patate_douce',nom:'Patate douce',emoji:'🍠',categorie:'legume',order:4},
+  {id:'poireau',nom:'Poireau',emoji:'🧅',categorie:'legume',order:5},
+  {id:'panais',nom:'Panais',emoji:'🥔',categorie:'legume',order:6},
+  {id:'butternut',nom:'Butternut',emoji:'🎃',categorie:'legume',order:7},
+  {id:'brocoli',nom:'Brocoli',emoji:'🥦',categorie:'legume',order:8},
+  {id:'chou_fleur',nom:'Chou-fleur',emoji:'🥦',categorie:'legume',order:9},
+  {id:'epinards',nom:'Épinards',emoji:'🥬',categorie:'legume',order:10},
+  {id:'aubergine',nom:'Aubergine',emoji:'🍆',categorie:'legume',order:11},
+  {id:'betterave',nom:'Betterave',emoji:'🔴',categorie:'legume',order:12},
+  {id:'petits_pois',nom:'Petits pois',emoji:'🟢',categorie:'legume',order:13},
+  {id:'navet',nom:'Navet',emoji:'⚪',categorie:'legume',order:14},
+  {id:'pomme',nom:'Pomme',emoji:'🍎',categorie:'fruit',order:15},
+  {id:'poire',nom:'Poire',emoji:'🍐',categorie:'fruit',order:16},
+  {id:'banane',nom:'Banane',emoji:'🍌',categorie:'fruit',order:17},
+  {id:'peche',nom:'Pêche',emoji:'🍑',categorie:'fruit',order:18},
+  {id:'nectarine',nom:'Nectarine',emoji:'🍑',categorie:'fruit',order:19},
+  {id:'abricot',nom:'Abricot',emoji:'🍑',categorie:'fruit',order:20},
+  {id:'prune',nom:'Prune',emoji:'🟣',categorie:'fruit',order:21},
+  {id:'mangue',nom:'Mangue',emoji:'🥭',categorie:'fruit',order:22},
+  {id:'avocat',nom:'Avocat',emoji:'🥑',categorie:'fruit',order:23},
+  {id:'fraise',nom:'Fraise',emoji:'🍓',categorie:'fruit',order:24},
+  {id:'framboise',nom:'Framboise',emoji:'🍇',categorie:'fruit',order:25},
+  {id:'melon',nom:'Melon',emoji:'🍈',categorie:'fruit',order:26},
+  {id:'myrtille',nom:'Myrtille',emoji:'🔵',categorie:'fruit',order:27},
+  {id:'pomme_de_terre',nom:'Pomme de terre',emoji:'🥔',categorie:'feculent',order:28},
+  {id:'riz',nom:'Riz',emoji:'🍚',categorie:'feculent',order:29},
+  {id:'pates',nom:'Pâtes',emoji:'🍝',categorie:'feculent',order:30},
+  {id:'semoule',nom:'Semoule de blé',emoji:'🌾',categorie:'feculent',order:31},
+  {id:'polenta',nom:'Polenta',emoji:'🌽',categorie:'feculent',order:32},
+  {id:'avoine',nom:'Avoine',emoji:'🌾',categorie:'feculent',order:33},
+  {id:'quinoa',nom:'Quinoa',emoji:'🌾',categorie:'feculent',order:34},
+  {id:'poulet',nom:'Poulet',emoji:'🍗',categorie:'proteine',order:35},
+  {id:'dinde',nom:'Dinde',emoji:'🦃',categorie:'proteine',order:36},
+  {id:'boeuf',nom:'Bœuf',emoji:'🐄',categorie:'proteine',order:37},
+  {id:'veau',nom:'Veau',emoji:'🐮',categorie:'proteine',order:38},
+  {id:'jambon_blanc',nom:'Jambon blanc',emoji:'🍖',categorie:'proteine',order:39},
+  {id:'cabillaud',nom:'Cabillaud',emoji:'🐟',categorie:'proteine',order:40},
+  {id:'colin',nom:'Colin',emoji:'🐟',categorie:'proteine',order:41},
+  {id:'saumon',nom:'Saumon',emoji:'🐟',categorie:'proteine',order:42},
+  {id:'sardine',nom:'Sardine',emoji:'🐟',categorie:'proteine',order:43},
+  {id:'oeuf',nom:'Œuf dur',emoji:'🥚',categorie:'proteine',order:44},
+  {id:'yaourt_nature',nom:'Yaourt nature',emoji:'🥛',categorie:'autre',order:45}
+];
+const CATEGORIE_LABELS = { legume:'Légumes', fruit:'Fruits', feculent:'Féculents', proteine:'Protéines', autre:'Autre' };
+const APPR_LABEL = { aime:'😋 Aimé', neutre:'😐 Neutre', rejete:'😖 Rejeté' };
+
+function alimentIconSrc(cfg) {
+  if (!cfg || cfg.custom) return null; // aliment ajouté manuellement : pas de fichier SVG dédié, emoji uniquement
+  return './images/aliments/' + cfg.id + '.svg';
+}
+
+function alimentConfigById(id) { return DB.aliments_config.find(c => c.id === id); }
+
+// Affiche l'icône SVG si elle existe, sinon retombe sur l'emoji (utilisé pour les aliments "custom"
+// ou si le fichier SVG venait à manquer sur le serveur)
+function diversifIconOrEmoji(cfg, size) {
+  const emoji = cfg ? (cfg.emoji || '🍽️') : '🍽️';
+  const src = alimentIconSrc(cfg);
+  if (src) {
+    return `<img src="${src}" style="width:${size}px;height:${size}px;object-fit:contain" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none;font-size:${Math.max(size-8,14)}px">${emoji}</span>`;
+  }
+  return `<span style="font-size:${Math.max(size-8,14)}px">${emoji}</span>`;
+}
+
+function listenAlimentsConfig() {
+  onSnapshot(collection(db, 'aliments_config'), snap => {
+    DB.aliments_config = snap.docs.map(d => d.data()).sort((a,b) => (a.order||0) - (b.order||0));
+    saveLocal();
+    if (!snap.docs.length && !localStorage.getItem('charlie_aliments_seeded')) {
+      localStorage.setItem('charlie_aliments_seeded', '1');
+      DEFAULT_ALIMENTS_CONFIG.forEach(c => fbSet('aliments_config', c));
+    }
+    populateDiversifAlimentSelect();
+    renderDiversifRecap();
+    renderDiversifListeAliments();
+  }, () => showSync('error'));
+}
+
+function listenDiversification() {
+  onSnapshot(collection(db, 'diversification'), snap => {
+    DB.diversification = snap.docs.map(d => d.data()).sort((a,b) => b.ts_num - a.ts_num);
+    saveLocal();
+    renderDiversifHistory();
+    renderDiversifRecap();
+    renderDiversifListeAliments();
+  }, () => showSync('error'));
+}
+
+function populateDiversifAlimentSelect() {
+  const sel = document.getElementById('diversif-aliment-select');
+  if (!sel) return;
+  const prevVal = sel.value;
+  const byCategorie = {};
+  DB.aliments_config.forEach(c => { (byCategorie[c.categorie] = byCategorie[c.categorie] || []).push(c); });
+  const order = ['legume','fruit','feculent','proteine','autre'];
+  let html = '';
+  order.forEach(cat => {
+    const items = byCategorie[cat];
+    if (!items || !items.length) return;
+    html += `<optgroup label="${CATEGORIE_LABELS[cat]}">`;
+    items.forEach(c => { html += `<option value="${c.id}">${c.emoji||''} ${c.nom}</option>`; });
+    html += `</optgroup>`;
+  });
+  sel.innerHTML = html;
+  if (prevVal && DB.aliments_config.some(c => c.id === prevVal)) sel.value = prevVal;
+  window.onDiversifAlimentChange();
+}
+
+window.onDiversifAlimentChange = function() {
+  const sel = document.getElementById('diversif-aliment-select');
+  const preview = document.getElementById('diversif-aliment-icon-preview');
+  if (!sel || !preview) return;
+  const cfg = alimentConfigById(sel.value);
+  const src = alimentIconSrc(cfg);
+  if (src) {
+    preview.src = src;
+    preview.style.display = 'block';
+    preview.onerror = () => { preview.style.display = 'none'; };
+  } else {
+    preview.style.display = 'none';
+  }
+};
+
+window.toggleDiversifNewAliment = function() {
+  document.getElementById('diversif-new-aliment-form').classList.toggle('open');
+};
+
+window.saveDiversifNewAliment = async function() {
+  const emoji = document.getElementById('diversif-new-aliment-emoji').value.trim();
+  const nom = document.getElementById('diversif-new-aliment-nom').value.trim();
+  if (!emoji || !nom) { showToast('⚠️ Emoji et nom requis'); return; }
+  const id = 'custom_' + Date.now();
+  const entry = { id, nom, emoji, categorie: 'autre', order: DB.aliments_config.length, custom: true };
+  document.getElementById('diversif-new-aliment-form').classList.remove('open');
+  document.getElementById('diversif-new-aliment-emoji').value = '';
+  document.getElementById('diversif-new-aliment-nom').value = '';
+  await fbSet('aliments_config', entry);
+  showToast('✓ Aliment ajouté');
+};
+
+let diversifAppreciation = null;
+window.selectDiversifAppreciation = function(el, val) {
+  diversifAppreciation = val;
+  document.querySelectorAll('.diversif-appreciation-btn').forEach(b => b.classList.remove('selected','aime','neutre','rejete'));
+  el.classList.add('selected', val);
+};
+
+window.saveRepasDiversif = async function() {
+  const sel = document.getElementById('diversif-aliment-select');
+  const alimentId = sel ? sel.value : null;
+  const quantiteRaw = document.getElementById('diversif-quantite').value;
+  const heure = document.getElementById('diversif-heure').value;
+  if (!alimentId) { showToast('⚠️ Choisissez un aliment'); return; }
+  if (!heure) { showToast('⚠️ Choisissez une heure'); return; }
+  if (!diversifAppreciation) { showToast('⚠️ Indiquez une appréciation'); return; }
+  const ts = timeToTs(heure);
+  const quantite = quantiteRaw ? parseFloat(quantiteRaw) : null;
+  const entry = {
+    id: Date.now(), ts, ts_num: ts,
+    aliments: [{ alimentId, quantite, unite: 'cuillere' }],
+    appreciation: diversifAppreciation,
+    reactionPhysique: null, // réservé v3.3 : lien avec couches/vomissements du même jour
+    phase: null             // réservé v3.3 : phase de diversification (réglages)
+  };
+  await fbSet('diversification', entry);
+  document.getElementById('diversif-quantite').value = '';
+  document.querySelectorAll('.diversif-appreciation-btn').forEach(b => b.classList.remove('selected','aime','neutre','rejete'));
+  diversifAppreciation = null;
+  showToast('✓ Repas enregistré');
+};
+
+window.deleteDiversif = async function(id) { await fbDelete('diversification', id); };
+
+function renderDiversifHistory() {
+  const list = document.getElementById('history-diversification');
+  if (!list) return;
+  const items = DB.diversification.filter(e => new Date(e.ts).toDateString() === todayStr()).sort((a,b) => b.ts - a.ts);
+  if (!items.length) { list.innerHTML = '<div class="empty-state">Aucun repas enregistré aujourd\'hui</div>'; return; }
+  list.innerHTML = items.map(e => {
+    const first = e.aliments && e.aliments[0];
+    const cfg = first ? alimentConfigById(first.alimentId) : null;
+    const nom = cfg ? cfg.nom : 'Aliment supprimé';
+    const qte = first && first.quantite ? first.quantite + ' cuil.' : '';
+    return `<div class="history-item">
+      <div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center">${diversifIconOrEmoji(cfg,26)}</div>
+      <div class="hi-body"><div class="hi-times">${nom}${qte?(' · '+qte):''}</div><div class="hi-meta">${APPR_LABEL[e.appreciation]||''}</div></div>
+      <div class="hi-duration">${fmtT(e.ts)}</div>
+      <button class="hi-delete" onclick="deleteDiversif(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// Regroupe l'historique complet par aliment. Le classement aimé/rejeté du récap se base sur la
+// DERNIÈRE tentative de chaque aliment (voir décision produit), pas sur une majorité de votes.
+function diversifStatsParAliment() {
+  const byAliment = {};
+  DB.diversification.forEach(e => {
+    (e.aliments||[]).forEach(a => {
+      if (!byAliment[a.alimentId]) byAliment[a.alimentId] = [];
+      byAliment[a.alimentId].push(e);
+    });
+  });
+  return Object.keys(byAliment).map(alimentId => {
+    const essais = byAliment[alimentId].sort((a,b) => b.ts - a.ts);
+    return { alimentId, nbTentatives: essais.length, derniereAppreciation: essais[0].appreciation, derniereDate: essais[0].ts };
+  });
+}
+
+function renderDiversifRecap() {
+  const aimesEl = document.getElementById('diversif-recap-aimes');
+  const rejetesEl = document.getElementById('diversif-recap-rejetes');
+  if (!aimesEl || !rejetesEl) return;
+  const stats = diversifStatsParAliment();
+  const aimes = stats.filter(s => s.derniereAppreciation === 'aime').sort((a,b) => b.derniereDate - a.derniereDate);
+  const rejetes = stats.filter(s => s.derniereAppreciation === 'rejete').sort((a,b) => b.derniereDate - a.derniereDate);
+  const renderCol = (arr) => {
+    if (!arr.length) return '<div class="diversif-empty-col">Aucun pour l\'instant</div>';
+    return arr.map(s => {
+      const cfg = alimentConfigById(s.alimentId);
+      const nom = cfg ? cfg.nom : 'Aliment supprimé';
+      return `<div class="diversif-recap-item">${diversifIconOrEmoji(cfg,26)}<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#2C2C2A">${nom}</div><div style="font-size:11px;color:#888780">${s.nbTentatives} tentative${s.nbTentatives>1?'s':''}</div></div></div>`;
+    }).join('');
+  };
+  aimesEl.innerHTML = renderCol(aimes);
+  rejetesEl.innerHTML = renderCol(rejetes);
+}
+
+function renderDiversifListeAliments() {
+  const list = document.getElementById('diversif-liste-aliments');
+  if (!list) return;
+  const stats = diversifStatsParAliment().sort((a,b) => b.derniereDate - a.derniereDate);
+  if (!stats.length) { list.innerHTML = '<div class="empty-state">Aucun aliment testé pour l\'instant</div>'; return; }
+  list.innerHTML = stats.map(s => {
+    const cfg = alimentConfigById(s.alimentId);
+    const nom = cfg ? cfg.nom : 'Aliment supprimé';
+    const dateStr = new Date(s.derniereDate).toDateString() === todayStr() ? "aujourd'hui" : new Date(s.derniereDate).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    return `<div class="history-item">
+      <div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center">${diversifIconOrEmoji(cfg,26)}</div>
+      <div class="hi-body"><div class="hi-times">${nom}</div><div class="hi-meta">Dernière fois : ${dateStr}</div></div>
+      <div class="hi-duration">${s.nbTentatives}×</div>
+    </div>`;
+  }).join('');
+}
+
 // ── DIAGRAMMES ────────────────────────────────────────────
 let currentPeriod=7;
 const W=360,H=120,PL=32,PR=10,PT=10,PB=24,CW=W-PL-PR,CH=H-PT-PB;
@@ -2572,6 +2902,8 @@ function bootApp() {
   listenCollection('temperatures','temperatures', ()=>{ renderTemperaturesHistory(); updateHome(); });
   listenCollection('bilans','bilans', ()=>{ renderBilanToday(); renderBilansHistory(); updateHome(); });
   listenPoids();
+  listenAlimentsConfig();
+  listenDiversification();
 }
 
 // Point d'entrée : si l'onboarding n'est pas terminé sur cet appareil, direction config.html.
