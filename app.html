@@ -2405,7 +2405,122 @@ function renderBilansHistory() {
     return `<div class="history-item"><div class="hi-dot" style="background:#A78BCA"></div><div class="hi-body"><div class="hi-times">${dateStr}</div><div class="hi-meta">${parts.join(' · ')||'RAS'}${b.commentaire?' · "'+b.commentaire+'"':''}</div></div></div>`;
   }).join('');
 }
+// ── ÉTAPES (FRISE CHRONOLOGIQUE) ──────────────────────────
+// Pas de fenêtre de 30 jours (comme poids/diversification) : les étapes peuvent remonter
+// à la naissance, bien au-delà de la fenêtre glissante utilisée pour tétées/couches/soins.
+let etapesExpanded = new Set();
 
+function listenEtapes() {
+  onSnapshot(collection(db, 'etapes'), snap => {
+    DB.etapes = snap.docs.map(d => d.data()).sort((a,b) => b.ts_num - a.ts_num);
+    saveLocal();
+    renderEtapesTimeline();
+  }, () => showSync('error'));
+}
+
+function fmtEtapeDateShort(dateStr) {
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return new Date(y, m-1, d).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}).replace('.','');
+}
+function fmtEtapeDateLong(dateStr) {
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return new Date(y, m-1, d).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+}
+
+function buildEtapeCardHTML(e, expanded) {
+  const emoji = e.emoji || '✨';
+  if (expanded) {
+    return `<div class="timeline-card expanded" onclick="window.toggleEtapeExpand(${e.id})">
+      <div class="te-emoji-lg">${emoji}</div>
+      <div class="te-name-lg">${e.nom}</div>
+      <div class="te-date-lg">${fmtEtapeDateLong(e.date)}</div>
+      <div class="te-actions">
+        <button class="hi-edit" onclick="event.stopPropagation();window.editEtape(${e.id})" title="Modifier">✎ Modifier</button>
+        <button class="hi-delete" onclick="event.stopPropagation();window.deleteEtape(${e.id})" title="Supprimer">✕ Supprimer</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="timeline-card" onclick="window.toggleEtapeExpand(${e.id})">
+    <div class="te-emoji">${emoji}</div>
+    <div class="te-name">${e.nom}</div>
+    <div class="te-date">${fmtEtapeDateShort(e.date)}</div>
+  </div>`;
+}
+
+function renderEtapesTimeline() {
+  const wrap = document.getElementById('timeline-etapes');
+  if (!wrap) return;
+  if (!DB.etapes.length) { wrap.innerHTML = '<div class="empty-state">Aucune étape enregistrée pour l\'instant</div>'; return; }
+  let html = '<div class="timeline-line"></div>';
+  DB.etapes.forEach((e, i) => {
+    const expanded = etapesExpanded.has(e.id);
+    const side = i % 2 === 0 ? 'right' : 'left';
+    html += `<div class="timeline-item ${expanded ? 'expanded' : side}">`;
+    if (!expanded) html += `<div class="timeline-dot"></div>`;
+    html += buildEtapeCardHTML(e, expanded);
+    html += `</div>`;
+  });
+  wrap.innerHTML = html;
+}
+
+window.toggleEtapeExpand = function(id) {
+  id = Number(id);
+  if (etapesExpanded.has(id)) etapesExpanded.delete(id); else etapesExpanded.add(id);
+  renderEtapesTimeline();
+};
+
+let editingEtapeId = null;
+
+window.toggleEtapeForm = function() {
+  const f = document.getElementById('etape-form');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) {
+    editingEtapeId = null;
+    document.getElementById('etape-form-title').textContent = 'Nouvelle étape';
+    document.getElementById('etape-emoji').value = '';
+    document.getElementById('etape-nom').value = '';
+    document.getElementById('etape-date').value = new Date().toISOString().split('T')[0];
+  }
+};
+
+window.cancelEtapeForm = function() {
+  document.getElementById('etape-form').classList.remove('open');
+  editingEtapeId = null;
+};
+
+window.editEtape = function(id) {
+  const e = DB.etapes.find(x => String(x.id) === String(id));
+  if (!e) return;
+  editingEtapeId = e.id;
+  document.getElementById('etape-form-title').textContent = "Modifier l'étape";
+  document.getElementById('etape-emoji').value = e.emoji || '';
+  document.getElementById('etape-nom').value = e.nom || '';
+  document.getElementById('etape-date').value = e.date;
+  const f = document.getElementById('etape-form');
+  f.classList.add('open');
+  f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.saveEtape = async function() {
+  const emoji = document.getElementById('etape-emoji').value.trim();
+  const nom = document.getElementById('etape-nom').value.trim();
+  const date = document.getElementById('etape-date').value;
+  if (!nom || !date) { showToast('⚠️ Nom et date requis'); return; }
+  const [y,m,d] = date.split('-').map(Number);
+  const ts_num = new Date(y, m-1, d).getTime();
+  const id = editingEtapeId || Date.now();
+  const entry = { id, nom, emoji: emoji || '✨', date, ts_num };
+  const wasEditing = !!editingEtapeId;
+  document.getElementById('etape-form').classList.remove('open');
+  editingEtapeId = null;
+  await fbSet('etapes', entry);
+  showToast(wasEditing ? '✓ Étape modifiée' : '✓ Étape ajoutée');
+};
+
+window.deleteEtape = async function(id) {
+  etapesExpanded.delete(Number(id));
+  await fbDelete('etapes', id);
+};
 // ── DIVERSIFICATION ───────────────────────────────────────
 // NB : contrairement aux autres collections (fenêtre glissante de 30 jours), la diversification
 // est écoutée SANS filtre de date (comme poids), car les tentatives sur un même aliment sont
