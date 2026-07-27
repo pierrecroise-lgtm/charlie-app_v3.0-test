@@ -2738,8 +2738,22 @@ function renderDiversifHistory() {
   }).join('');
 }
 
-// Regroupe l'historique complet par aliment. Le classement aimé/rejeté du récap se base sur la
-// DERNIÈRE tentative de chaque aliment (voir décision produit), pas sur une majorité de votes.
+// Regroupe l'historique complet par aliment et calcule un score cumulé d'appréciation :
+// +1 par essai "aimé", -1 par essai "rejeté", 0 pour "neutre" — plafonné à ±5, calculé en
+// parcourant les essais dans l'ordre chronologique (le plafond est un arrêt définitif :
+// une fois à +5, un nouvel essai "aimé" ne fait plus rien tant qu'un rejet n'est pas venu
+// le faire redescendre en dessous). Score > 0 = aimé, score < 0 = pas aimé, 0 = neutre/indéterminé.
+function computeAlimentScore(essaisChronologiques) {
+  let score = 0;
+  essaisChronologiques.forEach(e => {
+    if (e.appreciation === 'aime') score += 1;
+    else if (e.appreciation === 'rejete') score -= 1;
+    if (score > 5) score = 5;
+    if (score < -5) score = -5;
+  });
+  return score;
+}
+
 function diversifStatsParAliment() {
   const byAliment = {};
   DB.diversification.forEach(e => {
@@ -2749,9 +2763,31 @@ function diversifStatsParAliment() {
     });
   });
   return Object.keys(byAliment).map(alimentId => {
-    const essais = byAliment[alimentId].sort((a,b) => b.ts - a.ts);
-    return { alimentId, nbTentatives: essais.length, derniereAppreciation: essais[0].appreciation, derniereDate: essais[0].ts };
+    const essaisDesc = byAliment[alimentId].sort((a,b) => b.ts - a.ts); // plus récent d'abord (affichage "dernière fois")
+    const essaisAsc = [...essaisDesc].sort((a,b) => a.ts - b.ts);       // chronologique (calcul du score cumulé)
+    return {
+      alimentId,
+      nbTentatives: essaisDesc.length,
+      derniereAppreciation: essaisDesc[0].appreciation,
+      derniereDate: essaisDesc[0].ts,
+      score: computeAlimentScore(essaisAsc)
+    };
   });
+}
+
+function scoreLabel(score) { return score > 0 ? 'Aimé' : score < 0 ? 'Pas aimé' : 'Neutre'; }
+function scoreColor(score) { return score > 0 ? '#2D5E1E' : score < 0 ? '#7D3A08' : '#888780'; }
+
+// Jauge horizontale +5 (vert, gauche) → -5 (rouge, droite)
+function buildScoreGaugeHTML(score) {
+  const clamped = Math.max(-5, Math.min(5, score));
+  const percentFromLeft = ((5 - clamped) / 10) * 100;
+  const sign = score > 0 ? '+' : '';
+  return `<div class="diversif-score-gauge" onclick="event.stopPropagation()">
+    <div class="dsg-track"><div class="dsg-marker" style="left:${percentFromLeft.toFixed(1)}%"></div></div>
+    <div class="dsg-labels"><span>+5</span><span>0</span><span>-5</span></div>
+    <div class="dsg-score" style="color:${scoreColor(score)}">${sign}${score} · ${scoreLabel(score)}</div>
+  </div>`;
 }
 
 function renderDiversifRecap() {
@@ -2759,19 +2795,28 @@ function renderDiversifRecap() {
   const rejetesEl = document.getElementById('diversif-recap-rejetes');
   if (!aimesEl || !rejetesEl) return;
   const stats = diversifStatsParAliment();
-  const aimes = stats.filter(s => s.derniereAppreciation === 'aime').sort((a,b) => b.derniereDate - a.derniereDate);
-  const rejetes = stats.filter(s => s.derniereAppreciation === 'rejete').sort((a,b) => b.derniereDate - a.derniereDate);
-  const renderCol = (arr) => {
+  const aimes = stats.filter(s => s.score > 0).sort((a,b) => b.score - a.score || b.derniereDate - a.derniereDate);
+  const rejetes = stats.filter(s => s.score < 0).sort((a,b) => a.score - b.score || b.derniereDate - a.derniereDate);
+  const renderCol = (arr, positive) => {
     if (!arr.length) return '<div class="diversif-empty-col">Aucun pour l\'instant</div>';
     return arr.map(s => {
       const cfg = alimentConfigById(s.alimentId);
       const nom = cfg ? cfg.nom : 'Aliment supprimé';
-      return `<div class="diversif-recap-item">${diversifIconOrEmoji(cfg,26)}<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#2C2C2A">${nom}</div><div style="font-size:11px;color:#888780">${s.nbTentatives} tentative${s.nbTentatives>1?'s':''}</div></div></div>`;
+      const sign = s.score > 0 ? '+' : '';
+      const badgeColor = positive ? '#2D5E1E' : '#7D3A08';
+      const badgeBg = positive ? '#EBF5E6' : '#FEF0E6';
+      return `<div class="diversif-recap-item">${diversifIconOrEmoji(cfg,26)}<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#2C2C2A">${nom}</div><div style="font-size:11px;color:#888780">${s.nbTentatives} tentative${s.nbTentatives>1?'s':''}</div></div><div style="font-size:11px;font-weight:700;color:${badgeColor};background:${badgeBg};border-radius:10px;padding:2px 8px;white-space:nowrap">${sign}${s.score}</div></div>`;
     }).join('');
   };
-  aimesEl.innerHTML = renderCol(aimes);
-  rejetesEl.innerHTML = renderCol(rejetes);
+  aimesEl.innerHTML = renderCol(aimes, true);
+  rejetesEl.innerHTML = renderCol(rejetes, false);
 }
+
+let diversifAlimentExpanded = new Set();
+window.toggleDiversifAlimentExpand = function(alimentId) {
+  if (diversifAlimentExpanded.has(alimentId)) diversifAlimentExpanded.delete(alimentId); else diversifAlimentExpanded.add(alimentId);
+  renderDiversifListeAliments();
+};
 
 function renderDiversifListeAliments() {
   const list = document.getElementById('diversif-liste-aliments');
@@ -2782,9 +2827,14 @@ function renderDiversifListeAliments() {
     const cfg = alimentConfigById(s.alimentId);
     const nom = cfg ? cfg.nom : 'Aliment supprimé';
     const dateStr = new Date(s.derniereDate).toDateString() === todayStr() ? "aujourd'hui" : new Date(s.derniereDate).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
-    return `<div class="history-item">
+    const expanded = diversifAlimentExpanded.has(s.alimentId);
+    return `<div class="history-item" onclick="window.toggleDiversifAlimentExpand('${s.alimentId}')" style="cursor:pointer">
       <div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center">${diversifIconOrEmoji(cfg,26)}</div>
-      <div class="hi-body"><div class="hi-times">${nom}</div><div class="hi-meta">Dernière fois : ${dateStr}</div></div>
+      <div class="hi-body">
+        <div class="hi-times">${nom}</div>
+        <div class="hi-meta">Dernière fois : ${dateStr}</div>
+        ${expanded ? buildScoreGaugeHTML(s.score) : ''}
+      </div>
       <div class="hi-duration">${s.nbTentatives}×</div>
     </div>`;
   }).join('');
