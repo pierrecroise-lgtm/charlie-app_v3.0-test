@@ -1176,6 +1176,7 @@ window.navigate = function(page, el) {
   if(page==='malade') { renderVomisHistory(); renderTemperaturesHistory(); renderSellesHistory(); renderBilanToday(); renderBilansHistory(); }
   if(page==='reglages') { renderAlertsSettings(); }
   if(page==='diagrammes') renderDiagrammes();
+  if(page==='etapes') renderEtapesTimeline();
   if(page==='diversification') {
     const heureEl = document.getElementById('diversif-heure');
     if (heureEl && !heureEl.value) { const n=new Date(); heureEl.value = pad(n.getHours())+':'+pad(n.getMinutes()); }
