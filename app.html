@@ -649,7 +649,31 @@ class="home-image"
       </div>
     </div>
 
-    <!-- ÉTAPES (en construction) -->
+   <!-- ÉTAPES -->
+    <div class="page" id="page-etapes">
+      <div class="module-content">
+
+        <button class="btn-dashed" onclick="window.toggleEtapeForm()">＋ Ajouter une étape</button>
+
+        <div class="manual-form" id="etape-form">
+          <div class="form-title" id="etape-form-title">Nouvelle étape</div>
+          <div class="form-row">
+            <div class="form-group"><div class="form-label">Emoji</div><input type="text" id="etape-emoji" placeholder="👣" maxlength="4"></div>
+            <div class="form-group"><div class="form-label">Nom</div><input type="text" id="etape-nom" placeholder="ex: Premiers pas"></div>
+          </div>
+          <div class="form-group" style="margin-top:10px"><div class="form-label">Date</div><input type="date" id="etape-date"></div>
+          <div class="save-row" style="margin-top:12px">
+            <button class="btn-save" onclick="window.saveEtape()">✓ Enregistrer</button>
+            <button class="btn-secondary" onclick="window.cancelEtapeForm()">Annuler</button>
+          </div>
+        </div>
+
+        <div class="timeline-wrap" id="timeline-etapes">
+          <div class="empty-state">Aucune étape enregistrée pour l'instant</div>
+        </div>
+
+      </div>
+    </div>
     <div class="page" id="page-etapes">
       <div class="module-content">
         <div class="placeholder-card">
